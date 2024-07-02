@@ -1,0 +1,144 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block js %}
+<script>
+    var allCosts = {{ costs|safe }};
+    var allRevenues = {{ revenues|safe }};
+</script>
+<link rel="stylesheet" href="{% static 'css/daterangepicker.css' %}">
+<script src="{% static 'js/moment.min.js' %}"></script>
+<script src="{% static 'js/daterangepicker.min.js' %}"></script>
+<script src="{% static 'js/stats.js' %}"></script>
+<script src="{% static 'js/teams.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <div class="stats-content">
+        <h2 class="stats-label">Фильтр по дате</h2>
+        <div class="stats-filters">
+            <span class="stats-date standart active" id="{{ today }}">Сегодня</span>
+            <span class="stats-date standart" id="{{ yesterday }}">Вчера</span>
+            <span class="stats-date" id="daterangepicker">Выбрать</span>
+            <span class="stats-chosen-date">{{ today }}</span>
+        </div>
+        {% if user.is_superuser or user.lead %}
+            <h2 class="stats-label">Фильтр по баерам</h2>
+            <div class="stats-filters">
+                {% for buyer in buyers %}
+                    <span class="stats-buyer active" id="buyer-{{ buyer.pk }}">{{ buyer.buyer_id }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="stats-label stats-visible">
+            Итог
+            <img src="{% static 'img/arrow.svg' %}" alt=">" class="team-arrow active" id="arrow-stats">
+        </div>
+        <div class="stats-table-wrapper" id="hidden-stats" style="display: flex;">
+            <table class="stats-table">
+                <tr class="stats-stats-header">
+                    <th>Дата<div class="stats-arrow asc stats" id="stats-date-asc"></div><div class="stats-arrow desc stats" id="stats-date-desc"></div></th>
+                    {% if user.is_superuser or user.lead %}
+                        <th class="stats-cost-buyer">Баер<div class="stats-arrow asc stats" id="stats-buyer-asc"></div><div class="stats-arrow desc stats" id="stats-buyer-desc"></div></th>
+                    {% endif %}
+                    <th>Доход<div class="stats-arrow asc stats" id="stats-revenues-asc"></div><div class="stats-arrow desc stats" id="stats-revenues-desc"></div></th>
+                    <th>Расход<div class="stats-arrow asc stats" id="stats-costs-asc"></div><div class="stats-arrow desc stats" id="stats-costs-desc"></div></th>
+                    <th>Профит<div class="stats-arrow asc stats" id="stats-profit-asc"></div><div class="stats-arrow desc stats" id="stats-profit-desc"></div></th>
+                    <th>ROI<div class="stats-arrow asc stats" id="stats-roi-asc"></div><div class="stats-arrow desc stats" id="stats-roi-desc"></div></th>
+                </tr>
+                <tr>
+                    <td></td>
+                    {% if user.is_superuser or user.lead %}<td></td>{% endif %}
+                    <td class="stats-td-number" id="stats-total-revenues"></td>
+                    <td class="stats-td-number" id="stats-total-costs"></td>
+                    <td class="stats-td-number" id="stats-total-profit"></td>
+                    <td class="stats-td-number" id="stats-total-roi"></td>
+                </tr>
+            </table>
+        </div>
+        <div class="stats-label stats-visible">
+            Расходы
+            <img src="{% static 'img/arrow.svg' %}" alt=">" class="team-arrow" id="arrow-costs">
+        </div>
+        <div class="stats-table-wrapper" id="hidden-costs">
+            <table class="stats-table">
+                <tr class="stats-costs-header">
+                    <th>Дата<div class="stats-arrow asc" id="cost-date-asc"></div><div class="stats-arrow desc" id="cost-date-desc"></div></th>
+                    {% if user.is_superuser or user.lead %}
+                        <th class="stats-cost-buyer">Баер<div class="stats-arrow asc" id="cost-buyer-asc"></div><div class="stats-arrow desc" id="cost-buyer-desc"></div></th>
+                    {% endif %}
+                    <th>Кабинет<div class="stats-arrow asc" id="cost-account-asc"></div><div class="stats-arrow desc" id="cost-account-desc"></div></th>
+                    <th>spend</th>
+                    <th>spend (USD)<div class="stats-arrow asc" id="cost-amountUSD-asc"></div><div class="stats-arrow desc" id="cost-amountUSD-desc"></div></th>
+                    <th>clicks<div class="stats-arrow asc" id="cost-clicks-asc"></div><div class="stats-arrow desc" id="cost-clicks-desc"></div></th>
+                    <th>cost_per_unique_click<div class="stats-arrow asc" id="cost-cost_per_unique_click-asc"></div><div class="stats-arrow desc" id="cost-cost_per_unique_click-desc"></div></th>
+                    <th>cpc<div class="stats-arrow asc" id="cost-cpc-asc"></div><div class="stats-arrow desc" id="cost-cpc-desc"></div></th>
+                    <th>cpm<div class="stats-arrow asc" id="cost-cpm-asc"></div><div class="stats-arrow desc" id="cost-cpm-desc"></div></th>
+                    <th>ctr<div class="stats-arrow asc" id="cost-ctr-asc"></div><div class="stats-arrow desc" id="cost-ctr-desc"></div></th>
+                    <th>impressions<div class="stats-arrow asc" id="cost-impressions-asc"></div><div class="stats-arrow desc" id="cost-impressions-desc"></div></th>
+                    <th>objective<div class="stats-arrow asc" id="cost-objective-asc"></div><div class="stats-arrow desc" id="cost-objective-desc"></div></th>
+                    <th>quality_score_ectr<div class="stats-arrow asc" id="cost-quality_score_ectr-asc"></div><div class="stats-arrow desc" id="cost-quality_score_ectr-desc"></div></th>
+                    <th>quality_score_ecvr<div class="stats-arrow asc" id="cost-quality_score_ecvr-asc"></div><div class="stats-arrow desc" id="cost-quality_score_ecvr-desc"></div></th>
+                    <th>quality_score_organic<div class="stats-arrow asc" id="cost-quality_score_organic-asc"></div><div class="stats-arrow desc" id="cost-quality_score_organic-desc"></div></th>
+                    <th>results</th>
+                </tr>
+                <tr>
+                    <td></td>
+                    {% if user.is_superuser or user.lead %}<td></td>{% endif %}
+                    <td></td><td></td>
+                    <td class="stats-td-number" id="costs-total-amount"></td>
+                    <td class="stats-td-number" id="costs-total-clicks"></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+            </table>
+        </div>
+        <div class="stats-label stats-visible">
+            Доходы
+            <img src="{% static 'img/arrow.svg' %}" alt=">" class="team-arrow" id="arrow-revenues">
+        </div>
+        <div class="stats-table-wrapper" id="hidden-revenues">
+            <table class="stats-table">
+                <tr class="stats-revenues-header">
+                    <th>Дата и время<div class="stats-arrow asc" id="revenue-date-asc"></div><div class="stats-arrow desc" id="revenue-date-desc"></div></th>
+                    {% if user.is_superuser or user.lead %}
+                        <th>Баер<div class="stats-arrow asc" id="revenue-buyer-asc"></div><div class="stats-arrow desc" id="revenue-buyer-desc"></div></th>
+                    {% endif %}
+                    <th>revenue<div class="stats-arrow asc" id="revenue-amount-asc"></div><div class="stats-arrow desc" id="revenue-amount-desc"></div></th>
+                    <th>clicks<div class="stats-arrow asc" id="revenue-clicks-asc"></div><div class="stats-arrow desc" id="revenue-clicks-desc"></div></th>
+                    <th>conversions<div class="stats-arrow asc" id="revenue-purchases-asc"></div><div class="stats-arrow desc" id="revenue-purchases-desc"></div></th>
+                    <th>sales<div class="stats-arrow asc" id="revenue-registrations-asc"></div><div class="stats-arrow desc" id="revenue-registrations-desc"></div></th>
+                    <th>sub_id<div class="stats-arrow asc" id="revenue-sub_id-asc"></div><div class="stats-arrow desc" id="revenue-sub_id-desc"></div></th>
+                    <th>sub_id_1<div class="stats-arrow asc" id="revenue-sub_id_1-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_1-desc"></div></th>
+                    <th>sub_id_2<div class="stats-arrow asc" id="revenue-sub_id_2-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_2-desc"></div></th>
+                    <th>sub_id_3<div class="stats-arrow asc" id="revenue-sub_id_3-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_3-desc"></div></th>
+                    <th>sub_id_5<div class="stats-arrow asc" id="revenue-sub_id_5-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_5-desc"></div></th>
+                    <th>sub_id_6<div class="stats-arrow asc" id="revenue-sub_id_6-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_6-desc"></div></th>
+                    <th>sub_id_7<div class="stats-arrow asc" id="revenue-sub_id_7-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_7-desc"></div></th>
+                    <th>sub_id_8<div class="stats-arrow asc" id="revenue-sub_id_8-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_8-desc"></div></th>
+                    <th>sub_id_9<div class="stats-arrow asc" id="revenue-sub_id_9-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_9-desc"></div></th>
+                    <th>sub_id_10<div class="stats-arrow asc" id="revenue-sub_id_10-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_10-desc"></div></th>
+                    <th>sub_id_11<div class="stats-arrow asc" id="revenue-sub_id_11-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_11-desc"></div></th>
+                    <th>sub_id_12<div class="stats-arrow asc" id="revenue-sub_id_12-asc"></div><div class="stats-arrow desc" id="revenue-sub_id_12-desc"></div></th>
+                    <th>campaign<div class="stats-arrow asc" id="revenue-campaign-asc"></div><div class="stats-arrow desc" id="revenue-campaign-desc"></div></th>
+                    <th>campaign_group<div class="stats-arrow asc" id="revenue-campaign_group-asc"></div><div class="stats-arrow desc" id="revenue-campaign_group-desc"></div></th>
+                    <th>campaign_id<div class="stats-arrow asc" id="revenue-campaign_id-asc"></div><div class="stats-arrow desc" id="revenue-campaign_id-desc"></div></th>
+                    <th>campaign_unique_clicks<div class="stats-arrow asc" id="revenue-campaign_unique_clicks-asc"></div><div class="stats-arrow desc" id="revenue-campaign_unique_clicks-desc"></div></th>
+                    <th>country<div class="stats-arrow asc" id="revenue-country-asc"></div><div class="stats-arrow desc" id="revenue-country-desc"></div></th>
+                    <th>country_code<div class="stats-arrow asc" id="revenue-country_code-asc"></div><div class="stats-arrow desc" id="revenue-country_code-desc"></div></th>
+                    <th>offer<div class="stats-arrow asc" id="revenue-offer-asc"></div><div class="stats-arrow desc" id="revenue-offer-desc"></div></th>
+                    <th>os_icon<div class="stats-arrow asc" id="revenue-os_icon-asc"></div><div class="stats-arrow desc" id="revenue-os_icon-desc"></div></th>
+                    <th>os_version<div class="stats-arrow asc" id="revenue-os_version-asc"></div><div class="stats-arrow desc" id="revenue-os_version-desc"></div></th>
+                </tr>
+                <tr>
+                    <td></td>
+                    {% if user.is_superuser or user.lead %}<td></td>{% endif %}
+                    <td class="stats-td-number" id="revenues-total-amount"></td>
+                    <td class="stats-td-number" id="revenues-total-clicks"></td>
+                    <td class="stats-td-number" id="revenues-total-conversions"></td>
+                    <td class="stats-td-number" id="revenues-total-sales"></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+{% endblock %}

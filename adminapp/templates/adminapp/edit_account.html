@@ -1,0 +1,17 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block content %}
+    <form action="{% if request.resolver_match.url_name == 'edit_account' %}{% url 'adminapp:edit_account' pk=object.pk %}{% else %}{% url 'adminapp:create_account' %}{% endif %}" 
+    class="form-content" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h1 class="form-title">{% if request.resolver_match.url_name == 'edit_account' %}Изменить{% else %}Добавить{% endif %} аккаунт</h1>
+        {% for field in form %}
+            <div class="form-subblock">
+                <div class="form-label">{{ field.label }}</div>
+                {{ field }}{{ field.errors }}
+            </div>
+        {% endfor %}
+        <input type="submit" class="button" value="Сохранить">
+        <a href="{% url 'adminapp:accounts' %}" class="form-link">Назад</a>
+    </form>
+{% endblock %}

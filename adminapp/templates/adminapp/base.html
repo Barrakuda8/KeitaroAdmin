@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}{{ title }}{% endblock %}</title>
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+        <link type="image/x-icon" href="{% static 'img/logo.png' %}" rel="shortcut icon" id="head_icon">
+        <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+        {% block js %}
+        {% endblock %}
+    </head>
+    <body>
+        {% block menu %}
+            <div class="menu-block">
+                <a href="{% url 'adminapp:stats' %}" class="menu-link">Статистика</a>
+                {% if user.is_superuser %}
+                    <a href="{% url 'adminapp:teams' %}" class="menu-link">Баеры</a>
+                {% endif %}
+                <a href="{% url 'adminapp:accounts' %}" class="menu-link">Кабинеты</a>
+                <a href="{% url 'authapp:logout' %}" class="menu-link">Выйти</a>
+            </div>
+        {% endblock %}
+        {% block content %}
+        {% endblock %}
+    </body>
+</html>

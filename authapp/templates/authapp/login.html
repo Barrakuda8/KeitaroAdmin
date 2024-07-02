@@ -1,0 +1,13 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block menu %}
+{% endblock %}
+{% block content %}
+    <form class="form-content reset-form" action="{% url 'authapp:login' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in login_form %}
+            {{ field }}
+        {% endfor %}
+        <input type="submit" class="button" value="Войти">
+    </form>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block js %}
+<script src="{% static 'js/teams.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <div class="stats-content">
+        {% for account in object_list %}
+            <div class="team-block">
+                <div class="team-visible">
+                    <div class="team-name-block">
+                        {{ account }} - {{ account.full_name }}
+                        <a href="{% url 'adminapp:edit_account' pk=account.pk %}" class="button">Изменить</a>
+                        <a href="{% url 'adminapp:delete_account' pk=account.pk %}" class="button">Удалить</a> 
+                    </div>
+                    <img src="{% static 'img/arrow.svg' %}" alt=">" class="team-arrow" id="arrow-{{ account.pk }}">
+                </div>
+                <div class="team-hidden" id="hidden-{{ account.pk }}">
+                    <div class="team-label">Аккаунт</div>
+                    <div class="team-table-wrapper">
+                        <table class="team-table">
+                            <tr>
+                                <th>fbtool_id</th>
+                                <th>access_token</th>
+                                <th>cookie</th>
+                                <th>group_id</th>
+                                <th>group_name</th>
+                                <th>is_restricted</th>
+                                <th>name</th>
+                                <th>proxy</th>
+                                <th>status</th>
+                                <th>user_agent</th>
+                            </tr>
+                            <tr>
+                                <td>{{ account.fbtool_id }}</td>
+                                <td>{{ account.access_token }}</td>
+                                <td>{{ account.cookie }}</td>
+                                <td>{{ account.group_id }}</td>
+                                <td>{{ account.group_name }}</td>
+                                <td>{{ account.is_restricted }}</td>
+                                <td>{{ account.name }}</td>
+                                <td>{{ account.proxy }}</td>
+                                <td>{{ account.status }}</td>
+                                <td>{{ account.user_agent }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="team-label">Кабинеты</div>
+                    {% if account.get_cabinets %}
+                        <div class="team-table-wrapper">
+                            <table class="team-table">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Название</th>
+                                    <th>Таймзона</th>
+                                    <th>Валюта</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th>status</th>
+                                    <th>adspaymentcycle</th>
+                                    <th>adtrust_dsl</th>
+                                    <th>amount_spent</th>
+                                    <th>current_unbilled_spend</th>
+                                    <th>disable_reason</th>
+                                    <th>funding_source_details</th>
+                                    <th>fbtool_id</th>
+                                    <th>is_prepay_account</th>
+                                    <th>next_bill_date</th>
+                                    <th>owner</th>
+                                    <th>prepay_account_balance</th>
+                                    <th>spend_cap</th>
+                                    <th>viewable_business</th>
+                                </tr>
+                                {% for cabinet in account.get_cabinets %}
+                                    <tr>
+                                        <td>{{ cabinet.pk }}</td>
+                                        <td>{{ cabinet.name }}</td>
+                                        <td>{{ cabinet.timezone }}</td>
+                                        <td>{{ cabinet.currency }}</td>
+                                        <td class="teams-td-button"><a href="{% url 'adminapp:edit_cabinet' pk=cabinet.pk %}">Изменить</a></td>
+                                        <td class="teams-td-button"><a href="{% url 'adminapp:delete_cabinet' pk=cabinet.pk %}">Удалить</a></td>
+                                        <td>{{ cabinet.status }}</td>
+                                        <td>{{ cabinet.adspaymentcycle }}</td>
+                                        <td>{{ cabinet.adtrust_dsl }}</td>
+                                        <td>{{ cabinet.amount_spent }}</td>
+                                        <td>{{ cabinet.current_unbilled_spend }}</td>
+                                        <td>{{ cabinet.disable_reason }}</td>
+                                        <td>{{ cabinet.funding_source_details }}</td>
+                                        <td>{{ cabinet.fbtool_id }}</td>
+                                        <td>{{ cabinet.is_prepay_account }}</td>
+                                        <td>{{ cabinet.next_bill_date }}</td>
+                                        <td>{{ cabinet.owner }}</td>
+                                        <td>{{ cabinet.prepay_account_balance }}</td>
+                                        <td>{{ cabinet.spend_cap }}</td>
+                                        <td>{{ cabinet.viewable_business }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        <div class="stats-options-block">
+            <a href="{% url 'adminapp:create_account' %}" class="button">Добавить аккаунт</a>
+            <a href="{% url 'adminapp:create_cabinet' %}" class="button">Добавить кабинет</a>
+        </div>
+    </div>
+{% endblock %}

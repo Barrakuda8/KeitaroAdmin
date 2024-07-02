@@ -1,0 +1,74 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block js %}
+<script src="{% static 'js/teams.js' %}"></script>
+<script src="{% static 'js/change_password.js' %}"></script>
+{% endblock %}
+{% block content %}
+    {% csrf_token %}
+    <div class="stats-content">
+        {% for team in object_list %}
+            <div class="team-block">
+                <div class="team-visible">
+                    <div class="team-name-block">
+                        {{ team.name }}
+                        <a href="{% url 'adminapp:edit_team' pk=team.pk %}" class="button">Изменить</a>
+                        <a href="{% url 'adminapp:delete_team' pk=team.pk %}" class="button">Удалить</a> 
+                    </div>
+                    <img src="{% static 'img/arrow.svg' %}" alt=">" class="team-arrow" id="arrow-{{ team.pk }}">
+                </div>
+                <div class="team-hidden" id="hidden-{{ team.pk }}">
+                    {% if team.get_users %}
+                        <table class="team-table">
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Лид</th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            {% for user in team.get_users %}
+                                <tr>
+                                    <td>{{ user.buyer_id }}</td>
+                                    <td>{{ user.first_name }}</td>
+                                    <td><div class="team-lead{% if user.lead %} active{% endif %}"></div></td>
+                                    <td class="teams-change-password button" id="password-{{ user.pk }}">Сменить пароль</td>
+                                    <td class="teams-td-button"><a href="{% url 'adminapp:edit_user' pk=user.pk %}">Изменить</a></td>
+                                    <td class="teams-td-button"><a href="{% url 'adminapp:delete_user' pk=user.pk %}">Удалить</a></td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        {% if teamless %}
+            <span class="teams-title">Пользователи без команды</span>
+            <table class="team-table">
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Лид</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+                {% for user in teamless %}
+                    <tr>
+                        <td>{{ user.buyer_id }}</td>
+                        <td>{{ user.first_name }}</td>
+                        <td><div class="team-lead{% if user.lead %} active{% endif %}"></div></td>
+                        <td class="teams-change-password button" id="password-{{ user.pk }}">Сменить пароль</td>
+                        <td class="teams-td-button"><a href="{% url 'adminapp:edit_user' pk=user.pk %}">Изменить</a></td>
+                        <td class="teams-td-button"><a href="{% url 'adminapp:delete_user' pk=user.pk %}">Удалить</a></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+        <div class="stats-options-block">
+            <a href="{% url 'adminapp:create_team' %}" class="button">Создать команду</a>
+            <a href="{% url 'adminapp:create_user' %}" class="button">Добавить баера</a>
+        </div>
+    </div>
+{% endblock %}

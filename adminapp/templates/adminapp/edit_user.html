@@ -1,0 +1,29 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+
+{% block js %}
+    {% if request.resolver_match.url_name == 'create_user' %}
+        <script src="{% static 'js/add_user.js' %}"></script>
+    {% endif %}
+{% endblock %}
+{% block content %}
+<form action="{% if request.resolver_match.url_name == 'edit_user' %}{% url 'adminapp:edit_user' pk=object.pk %}{% else %}{% url 'adminapp:create_user' %}{% endif %}" 
+class="form-content" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <h1 class="form-title">{% if request.resolver_match.url_name == 'edit_user' %}Изменить{% else %}Добавить{% endif %} пользователя</h1>
+    {% for field in form %}
+        <div class="form-subblock">
+            <div class="form-label">{{ field.label }}</div>
+            {{ field }}{{ field.errors }}
+        </div>
+    {% endfor %}
+    {% if request.resolver_match.url_name == 'create_user' %}
+    <div class="form-password-message">
+        <div>Пароль скопирован в буфер обмена. Не забудьте сохранить его перед отправкой формы:</div>
+        <div id="password"></div>
+    </div>
+    {% endif %}
+    <input type="submit" class="button" value="Сохранить">
+    <a href="{% url 'adminapp:teams' %}" class="form-link">Назад</a>
+</form>
+{% endblock %}
