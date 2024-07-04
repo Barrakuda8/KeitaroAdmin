@@ -38,8 +38,8 @@ class Cabinet(models.Model):
 
     status = models.IntegerField(null=True, blank=True)
     adspaymentcycle = models.JSONField(null=True, blank=True)
-    adtrust_dsl = models.PositiveBigIntegerField(null=True, blank=True)
-    amount_spent = models.PositiveIntegerField(null=True, blank=True)
+    adtrust_dsl = models.FloatField(null=True, blank=True)
+    amount_spent = models.FloatField(null=True, blank=True)
     current_unbilled_spend = models.JSONField(null=True, blank=True)
     disable_reason = models.IntegerField(null=True, blank=True)
     funding_source_details = models.JSONField(null=True, blank=True)
@@ -48,7 +48,7 @@ class Cabinet(models.Model):
     next_bill_date = models.DateTimeField(null=True, blank=True)
     owner = models.BigIntegerField(null=True, blank=True)
     prepay_account_balance = models.JSONField(null=True, blank=True)
-    spend_cap = models.IntegerField(null=True, blank=True)
+    spend_cap = models.FloatField(null=True, blank=True)
     timezone_offset_hours_utc = models.IntegerField(null=True, blank=True)
     viewable_business = models.JSONField(null=True, blank=True)
 
@@ -100,9 +100,9 @@ class Cost(models.Model):
     ctr = models.FloatField(null=True)
     impressions = models.PositiveIntegerField(null=True)
     objective = models.TextField(null=True)
-    quality_score_ectr = models.PositiveIntegerField(null=True)
-    quality_score_ecvr = models.PositiveIntegerField(null=True)
-    quality_score_organic = models.PositiveIntegerField(null=True)
+    quality_score_ectr = models.FloatField(null=True)
+    quality_score_ecvr = models.FloatField(null=True)
+    quality_score_organic = models.FloatField(null=True)
     results = models.JSONField(null=True, blank=True)
 
     @property

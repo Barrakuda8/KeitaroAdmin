@@ -127,7 +127,7 @@ if not config.PROD:
         BASE_DIR / "static",
     )
 else:
-    STATIC_ROOT = BASE_DIR / 'prodstatic'
+    STATIC_ROOT = BASE_DIR / '/var/www/static'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
