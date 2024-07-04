@@ -24,7 +24,7 @@ class Command(BaseCommand):
                           "sub_id_1",
                           "sub_id_2", "sub_id_3", "sub_id_4", "sub_id_5", "sub_id_6", "sub_id_7", "sub_id_8",
                           "sub_id_9",
-                          "sub_id_10", "sub_id_11", "sub_id_12"],
+                          "sub_id_10", "sub_id_11", "sub_id_12", "sub_id"],
              "filters": [{"name": "offer_id", "operator": "NOT_EQUAL", "expression": ""}],
              "summary": True,
              "offset": 0}
@@ -39,30 +39,28 @@ class Command(BaseCommand):
                                  data=payload)
         response_json = response.json()
 
-        date = datetime.today().date() if day == 'today' else (datetime.today() - timedelta(days=1)).date()
-        Revenue.objects.filter(datetime__contains=date).delete()
-
         for revenue_data in response_json['rows']:
             if revenue_data['sub_id_9'].isdigit() and len(revenue_data['sub_id_10']) > 10:
-                revenue_data['amount'] = revenue_data['revenue']
-                del revenue_data['revenue']
-                buyer_check = User.objects.filter(buyer_id=revenue_data['sub_id_4'])
-                if buyer_check.exists():
-                    buyer = buyer_check.first()
-                else:
-                    password = ''.join(random.sample(list(string.ascii_letters) +
-                                                     list(map(lambda x: str(x), range(0,10))) +
-                                                     ['!', '#', '$', '%', '&', '*', '/', ':', ';', '<', '>', '?', '@', '^', '~'], 10))
-                    email = password + '@not.found'
-                    buyer = User.objects.create_user(username=email, email=email, password=password)
-                    buyer.first_name = 'Not found'
-                    buyer.buyer_id = revenue_data['sub_id_4']
-                    buyer.save()
+                if not Revenue.objects.filter(sub_id=revenue_data['sub_id']).exists():
+                    revenue_data['amount'] = revenue_data['revenue']
+                    del revenue_data['revenue']
+                    buyer_check = User.objects.filter(buyer_id=revenue_data['sub_id_4'])
+                    if buyer_check.exists():
+                        buyer = buyer_check.first()
+                    else:
+                        password = ''.join(random.sample(list(string.ascii_letters) +
+                                                         list(map(lambda x: str(x), range(0,10))) +
+                                                         ['!', '#', '$', '%', '&', '*', '/', ':', ';', '<', '>', '?', '@', '^', '~'], 10))
+                        email = password + '@not.found'
+                        buyer = User.objects.create_user(username=email, email=email, password=password)
+                        buyer.first_name = 'Not found'
+                        buyer.buyer_id = revenue_data['sub_id_4']
+                        buyer.save()
 
-                del revenue_data['sub_id_4']
-                revenue_data['buyer'] = buyer
-                revenue_data['datetime'] = (datetime.strptime(revenue_data['datetime'], '%Y-%m-%d %H:%M:%S')
-                                            .replace(tzinfo=pytz.timezone(config.TIMEZONE)))
-                if day == 'yesterday':
-                    revenue_data['definitive'] = True
-                Revenue.objects.create(**revenue_data)
+                    del revenue_data['sub_id_4']
+                    revenue_data['buyer'] = buyer
+                    revenue_data['datetime'] = (datetime.strptime(revenue_data['datetime'], '%Y-%m-%d %H:%M:%S')
+                                                .replace(tzinfo=pytz.timezone(config.TIMEZONE)))
+                    if day == 'yesterday':
+                        revenue_data['definitive'] = True
+                    Revenue.objects.create(**revenue_data)

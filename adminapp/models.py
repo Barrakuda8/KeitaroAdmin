@@ -91,6 +91,7 @@ class Cost(models.Model):
     date = models.DateField(verbose_name='Дата')
     ad = models.ForeignKey(Ad, on_delete=models.CASCADE, related_name='costs', verbose_name='Объявление')
     amount = models.FloatField(verbose_name='Расход')
+    amount_USD = models.FloatField(null=True, verbose_name='Расход USD')
     clicks = models.PositiveIntegerField(null=True, blank=True, verbose_name='Клики')
     definitive = models.BooleanField(default=False, verbose_name='Окончательный вариант')
     cost_per_unique_click = models.FloatField(null=True)

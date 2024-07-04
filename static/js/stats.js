@@ -1,6 +1,5 @@
 window.addEventListener('load', () => {
 
-    let currencies;
     let displayBuyer = $('.stats-cost-buyer').length > 0;
     let costs, revenues;
     let totalCosts = 0;
@@ -18,9 +17,6 @@ window.addEventListener('load', () => {
             success: (data) => {
                 allCosts = JSON.parse(data['costs']);
                 allRevenues = JSON.parse(data['revenues']);
-                for(let cost of allCosts) {
-                    cost.fields['amountUSD'] = Math.round(parseFloat(cost.fields.amount) * currencies[cost.fields.ad.currency.toLowerCase()]['inverseRate'] * 100) / 100;
-                }
                 setData();
             },
             error: (data) => {
@@ -57,7 +53,7 @@ window.addEventListener('load', () => {
                     ${displayBuyer ? `<td>${cost.fields.ad.buyer_id}</td>` : ''}
                     <td>${cost.fields.ad.cabinet_pk}</td>
                     <td class="stats-td-number">${cost.fields.amount } ${cost.fields.ad.currency}</td>
-                    <td class="stats-td-number">${cost.fields.amountUSD} USD</td>
+                    <td class="stats-td-number">${cost.fields.amount_USD} USD</td>
                     <td class="stats-td-number">${cost.fields.clicks}</td>
                     <td class="stats-td-number">${cost.fields.cost_per_unique_click}</td>
                     <td class="stats-td-number">${cost.fields.cpc}</td>
@@ -79,7 +75,7 @@ window.addEventListener('load', () => {
         let totalViews = 0;
         for(let cost of costs) {
             htmlString += cost.htmlString;
-            totalCosts += cost.fields.amountUSD;
+            totalCosts += cost.fields.amount_USD;
             totalClicks += cost.fields.clicks;
             totalViews += cost.fields.views;
 
@@ -89,9 +85,9 @@ window.addEventListener('load', () => {
             }
             let date = cost.fields.date;
             if(!Object.keys(stats[buyerId]).includes(date)) {
-                stats[buyerId][date] = {"costs": cost.fields.amountUSD, "revenues": 0};
+                stats[buyerId][date] = {"costs": cost.fields.amount_USD, "revenues": 0};
             } else {
-                stats[buyerId][date]['costs'] += cost.fields.amountUSD;
+                stats[buyerId][date]['costs'] += cost.fields.amount_USD;
             }
         }
         totalCosts = Math.round(totalCosts * 100) / 100;
@@ -221,24 +217,6 @@ window.addEventListener('load', () => {
         fill();
     }
 
-    $.ajax({
-        method: "get",
-        url: "https://www.floatrates.com/daily/usd.json",
-        success: (data) => {
-            currencies = data;
-            for(let cost of allCosts) {
-                cost.fields['amountUSD'] = Math.round(parseFloat(cost.fields.amount) * currencies[cost.fields.ad.currency.toLowerCase()]['inverseRate'] * 100) / 100;
-            }
-            setData();
-        },
-        error: (data) => {
-            for(let cost of allCosts) {
-                cost.fields['ammountUSD'] = 0;
-            }
-            setData();
-        }
-    });
-
     $('.stats-arrow:not(.stats)').on('click', (e) => {
         let [model, field, direction] = e.target.id.split('-');
         let obj = model == 'cost' ? costs : revenues;
@@ -301,4 +279,6 @@ window.addEventListener('load', () => {
         revenues = allRevenues.filter((revenue) => buyers.includes(revenue.fields.buyer[0]));
         fill();
     })
+
+    setData();
 })

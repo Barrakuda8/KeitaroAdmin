@@ -23,7 +23,7 @@ def get_data(fbtool_id, date):
     return response.json()
 
 
-def process_data(cabinet_data, date, definitive=False):
+def process_data(cabinet_data, date, currencies, definitive=False):
     updated_campaigns = {}
     updated_adsets = {}
     cabinet_id = int(cabinet_data['account_id'])
@@ -101,6 +101,7 @@ def process_data(cabinet_data, date, definitive=False):
                 insight['date'] = date
                 insight['definitive'] = definitive
                 insight['amount'] = insight['spend']
+                insight['amount_USD'] = round(float(insight['amount']) * currencies[cabinet.currency.lower()]['inverseRate'], 2)
                 del insight['spend']
                 del insight['date_start']
                 del insight['date_stop']
@@ -118,7 +119,8 @@ def process_data(cabinet_data, date, definitive=False):
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        today = (datetime.now() - timedelta(days=4)).date()
+        currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
+        today = datetime.now().date()
         yesterday = today - timedelta(days=1)
         tomorrow = today + timedelta(days=1)
         accounts = Account.objects.all()
@@ -156,16 +158,20 @@ class Command(BaseCommand):
                     Cabinet.objects.create(**cab)
 
             for cabinet in account.get_cabinets:
-                now = datetime.now(pytz.timezone(cabinet.timezone))
-                date = now.date()
-                hour = now.hour
+                date = datetime.now(pytz.timezone(cabinet.timezone)).date()
                 str_cabinet_pk = str(cabinet.pk)
-                if (((date == today and hour == 0) or (date == yesterday and hour != 0))
+                if ((date == yesterday or (date == today
+                                           and Cost.objects.filter(date=yesterday, definitive=False,
+                                                                   ad__adset__campaign__cabinet__pk=cabinet.pk).exists()))
                         and str_cabinet_pk in yesterday_data.keys() and 'ads' in yesterday_data[str_cabinet_pk].keys()):
-                    process_data(yesterday_data[str_cabinet_pk], yesterday, hour == 0)
-                elif (((date == tomorrow and hour == 0) or (date == today and hour != 0))
-                      and str_cabinet_pk in today_data.keys() and 'ads' in today_data[str_cabinet_pk].keys()):
-                    process_data(today_data[str_cabinet_pk], today, hour == 0)
-                elif (date == tomorrow and str_cabinet_pk in tomorrow_data.keys()
-                      and 'ads' in tomorrow_data[str_cabinet_pk].keys()):
-                    process_data(tomorrow_data[str_cabinet_pk], tomorrow)
+                    process_data(yesterday_data[str_cabinet_pk], yesterday, currencies, date == today)
+
+                if ((date == today or (date == tomorrow
+                                       and Cost.objects.filter(date=today, definitive=False,
+                                                               ad__adset__campaign__cabinet__pk=cabinet.pk).exists()))
+                        and str_cabinet_pk in today_data.keys() and 'ads' in today_data[str_cabinet_pk].keys()):
+                    process_data(today_data[str_cabinet_pk], today, currencies, date == tomorrow)
+
+                if (date == tomorrow and str_cabinet_pk in tomorrow_data.keys()
+                        and 'ads' in tomorrow_data[str_cabinet_pk].keys()):
+                    process_data(tomorrow_data[str_cabinet_pk], tomorrow, currencies)

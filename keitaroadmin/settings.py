@@ -41,6 +41,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'authapp',
     'adminapp',
+    'django_crontab'
+]
+
+CRONJOBS = [
+    ('2 * * * *', 'django.core.management.call_command', ['get_revenues']),
+    ('3 */2 * * *', 'django.core.management.call_command', ['get_costs']),
 ]
 
 MIDDLEWARE = [
@@ -121,7 +127,7 @@ if not config.PROD:
         BASE_DIR / "static",
     )
 else:
-    STATIC_ROOT = BASE_DIR / 'static'
+    STATIC_ROOT = BASE_DIR / 'prodstatic'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
