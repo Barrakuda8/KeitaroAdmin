@@ -9,7 +9,10 @@ from authapp.forms import UserLoginForm
 
 def index(request):
     if request.user.is_authenticated:
-        return HttpResponseRedirect(reverse('adminapp:stats'))
+        if request.user.support_id:
+            return HttpResponseRedirect(reverse('adminapp:accounts'))
+        else:
+            return HttpResponseRedirect(reverse('adminapp:stats'))
     else:
         return HttpResponseRedirect(reverse('authapp:login'))
 
@@ -22,7 +25,10 @@ def login(request):
         user = auth.authenticate(username=username, password=password)
         if user:
             auth.login(request, user)
-        return HttpResponseRedirect(reverse('adminapp:stats'))
+        if request.user.support_id:
+            return HttpResponseRedirect(reverse('adminapp:accounts'))
+        else:
+            return HttpResponseRedirect(reverse('adminapp:stats'))
 
     context = {
         'title': 'Авторизация',

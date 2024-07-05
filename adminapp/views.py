@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytz
 import requests
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import user_passes_test
 from django.core import serializers
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -14,12 +14,12 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 import config
 from adminapp.forms import AccountEditForm, CabinetEditForm
-from adminapp.models import Cost, Revenue, Account, Cabinet
-from authapp.forms import TeamEditForm, UserEditForm, UserCreateForm
+from adminapp.models import Cost, Revenue, Account, Cabinet, Update
+from authapp.forms import TeamEditForm, UserEditForm, UserCreateForm, SupportCreateForm, SupportEditForm
 from authapp.models import User, Team
 
 
-@login_required
+@user_passes_test(lambda u: not u.support_id)
 def stats(request):
 
     costs = Cost.objects.filter(date=datetime.today())
@@ -43,22 +43,24 @@ def stats(request):
         'revenues': serializers.serialize("json", revenues, use_natural_foreign_keys=True),
         'buyers': buyers,
         'today': datetime.today().strftime("%Y-%m-%d"),
-        'yesterday': (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+        'yesterday': (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d"),
+        'last_update_revenues': Update.objects.filter(type='revenues').order_by('datetime').last()
+        .datetime.replace(microsecond=0, second=0),
+        'last_update_costs': Update.objects.filter(type='costs').order_by('datetime').last()
+        .datetime.replace(microsecond=0, second=0),
     }
 
     return render(request, 'adminapp/stats.html', context=context)
 
 
-@login_required
+@user_passes_test(lambda u: not u.support_id)
 def filter_by_date(request):
     start = request.GET.get('start_date')
     end = request.GET.get('end_date')
 
     costs = Cost.objects.filter(date__gte=start, date__lte=end)
-    revenues = Revenue.objects.filter(datetime__gte=(datetime.strptime(start + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
-                                                     .replace(tzinfo=pytz.timezone(config.TIMEZONE))),
-                                      datetime__lte=(datetime.strptime(end + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
-                                                     .replace(tzinfo=pytz.timezone(config.TIMEZONE))))
+    revenues = Revenue.objects.filter(datetime__gte=(datetime.strptime(start + ' 00:00:00', '%Y-%m-%d %H:%M:%S')),
+                                      datetime__lte=(datetime.strptime(end + ' 23:59:59', '%Y-%m-%d %H:%M:%S')))
 
     if request.user.is_superuser:
         pass
@@ -93,6 +95,13 @@ def change_password(request):
 class HeadAccessMixin:
 
     @method_decorator(user_passes_test(lambda u: u.is_superuser))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
+
+class SupportAccessMixin:
+
+    @method_decorator(user_passes_test(lambda u: u.is_superuser or u.support_id))
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
@@ -138,12 +147,38 @@ class UserDeleteView(HeadAccessMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Удаление баера'
+        context['title'] = 'Удаление пользователя'
+
+        return context
+    
+
+class SupportCreateView(HeadAccessMixin, CreateView):
+    model = User
+    template_name = 'adminapp/edit_support.html'
+    success_url = reverse_lazy('adminapp:teams')
+    form_class = SupportCreateForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Добавление саппорта'
 
         return context
 
 
-class TeamListView(HeadAccessMixin, ListView):
+class SupportEditView(HeadAccessMixin, UpdateView):
+    model = User
+    template_name = 'adminapp/edit_support.html'
+    success_url = reverse_lazy('adminapp:teams')
+    form_class = SupportEditForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Редактирование саппорта'
+
+        return context
+
+
+class TeamListView(SupportAccessMixin, ListView):
     model = Team
     template_name = 'adminapp/teams.html'
     # paginate_by = 9
@@ -151,7 +186,8 @@ class TeamListView(HeadAccessMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Баеры'
-        context['teamless'] = User.objects.filter(team__isnull=True)
+        context['teamless'] = User.objects.filter(team__isnull=True, buyer_id__isnull=False, support_id__isnull=True)
+        context['supports'] = User.objects.filter(support_id__isnull=False)
 
         return context
 
@@ -210,7 +246,7 @@ class AccountListView(AccessMixin, ListView):
         return context
 
     def get_queryset(self):
-        if self.request.user.is_superuser:
+        if self.request.user.is_superuser or self.request.user.support_id:
             accounts = Account.objects.all()
         elif self.request.user.lead:
             accounts = Account.objects.filter(buyer__team__pk=self.request.user.team.pk)

@@ -15,7 +15,7 @@ class AccountEditForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         user = User.objects.get(pk=user_id)
-        if user.is_superuser:
+        if user.is_superuser or user.support_id:
             queryset = User.objects.filter(buyer_id__isnull=False)
         elif user.lead:
             queryset = User.objects.filter(team__pk=user.team.pk)
@@ -41,7 +41,7 @@ class CabinetEditForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         user = User.objects.get(pk=user_id)
-        if user.is_superuser:
+        if user.is_superuser or user.support_id:
             queryset = Account.objects.all()
         elif user.lead:
             queryset = Account.objects.filter(buyer__team__pk=user.team.pk)

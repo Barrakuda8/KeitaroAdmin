@@ -2,22 +2,22 @@
 {% load static %}
 
 {% block js %}
-    {% if request.resolver_match.url_name == 'create_user' %}
+    {% if request.resolver_match.url_name == 'create_support' %}
         <script src="{% static 'js/add_user.js' %}"></script>
     {% endif %}
 {% endblock %}
 {% block content %}
-<form action="{% if request.resolver_match.url_name == 'edit_user' %}{% url 'adminapp:edit_user' pk=object.pk %}{% else %}{% url 'adminapp:create_user' %}{% endif %}" 
+<form action="{% if request.resolver_match.url_name == 'edit_support' %}{% url 'adminapp:edit_support' pk=object.pk %}{% else %}{% url 'adminapp:create_support' %}{% endif %}" 
 class="form-content" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <h1 class="form-title">{% if request.resolver_match.url_name == 'edit_user' %}Изменить{% else %}Добавить{% endif %} баера</h1>
+    <h1 class="form-title">{% if request.resolver_match.url_name == 'edit_support' %}Изменить{% else %}Добавить{% endif %} саппорта</h1>
     {% for field in form %}
         <div class="form-subblock">
             <div class="form-label">{{ field.label }}</div>
             {{ field }}{{ field.errors }}
         </div>
     {% endfor %}
-    {% if request.resolver_match.url_name == 'create_user' %}
+    {% if request.resolver_match.url_name == 'create_support' %}
     <div class="form-password-message">
         <div>Пароль скопирован в буфер обмена. Не забудьте сохранить его перед отправкой формы:</div>
         <div id="password"></div>

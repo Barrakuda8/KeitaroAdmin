@@ -13,6 +13,9 @@
 {% endblock %}
 {% block content %}
     <div class="stats-content">
+        <h2 class="stats-label">Последние обновления</h2>
+        <div>Расходы: {{ last_update_costs|date:"d.m.Y H:i" }}</div>
+        <div class="stats-filters">Доходы: {{ last_update_revenues|date:"d.m.Y H:i" }}</div>
         <h2 class="stats-label">Фильтр по дате</h2>
         <div class="stats-filters">
             <span class="stats-date standart active" id="{{ today }}">Сегодня</span>

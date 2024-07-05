@@ -149,3 +149,9 @@ class Revenue(models.Model):
     os_version = models.TextField(null=True, blank=True)
     definitive = models.BooleanField(default=False, verbose_name='Окончательный вариант')
 
+
+class Update(models.Model):
+
+    datetime = models.DateTimeField(verbose_name='Дата и время')
+    type = models.CharField(max_length=16, verbose_name='Тип')
+

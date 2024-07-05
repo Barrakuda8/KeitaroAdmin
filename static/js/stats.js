@@ -195,7 +195,7 @@ window.addEventListener('load', () => {
         $('.stats-stats-header').after(htmlString);
         $('#stats-total-revenues').html(totalRevenues);
         $('#stats-total-costs').html(totalCosts);
-        $('#stats-total-profit').html(totalRevenues - totalCosts);
+        $('#stats-total-profit').html(Math.round((totalRevenues - totalCosts) * 100) / 100);
         $('#stats-total-roi').html(totalCosts != 0 ? Math.round(((totalRevenues - totalCosts) / totalCosts) * 10000) / 100 : '-');
     }
 

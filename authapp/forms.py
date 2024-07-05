@@ -19,6 +19,7 @@ class UserLoginForm(AuthenticationForm):
 
 
 class UserCreateForm(UserCreationForm):
+    buyer_id = forms.CharField(max_length=8, required=True, label='ID Баера')
 
     class Meta:
         model = User
@@ -39,11 +40,55 @@ class UserCreateForm(UserCreationForm):
 
 
 class UserEditForm(UserChangeForm):
+    buyer_id = forms.CharField(max_length=8, required=True, label='ID Баера')
     password = None
 
     class Meta:
         model = User
         fields = ('email', 'first_name', 'lead', 'buyer_id', 'team')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-input'
+            field.help_text = ''
+
+    def save(self, *args, **kwargs):
+        user = super().save(*args, **kwargs)
+        user.username = user.email
+        user.save()
+
+        return user
+
+
+class SupportCreateForm(UserCreationForm):
+    support_id = forms.CharField(max_length=8, required=True, label='ID Саппорта')
+
+    class Meta:
+        model = User
+        fields = ('email', 'first_name', 'support_id')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-input'
+            field.help_text = ''
+
+    def save(self, *args, **kwargs):
+        user = super().save(*args, **kwargs)
+        user.username = user.email
+        user.save()
+
+        return user
+
+
+class SupportEditForm(UserChangeForm):
+    support_id = forms.CharField(max_length=8, required=True, label='ID Саппорта')
+    password = None
+
+    class Meta:
+        model = User
+        fields = ('email', 'first_name', 'support_id')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

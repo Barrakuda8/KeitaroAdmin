@@ -15,11 +15,13 @@
     <body>
         {% block menu %}
             <div class="menu-block">
-                <a href="{% url 'adminapp:stats' %}" class="menu-link">Статистика</a>
-                {% if user.is_superuser %}
+                {% if not user.support_id %}
+                    <a href="{% url 'adminapp:stats' %}" class="menu-link">Статистика</a>
+                {% endif %}
+                {% if user.is_superuser or user.support_id %}
                     <a href="{% url 'adminapp:teams' %}" class="menu-link">Баеры</a>
                 {% endif %}
-                <a href="{% url 'adminapp:accounts' %}" class="menu-link">Кабинеты</a>
+                <a href="{% url 'adminapp:accounts' %}" class="menu-link">Аккаунты</a>
                 <a href="{% url 'authapp:logout' %}" class="menu-link">Выйти</a>
             </div>
         {% endblock %}

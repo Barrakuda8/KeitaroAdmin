@@ -7,7 +7,7 @@ import requests
 from django.core.management import BaseCommand
 
 import config
-from adminapp.models import Account, Cost, Cabinet, Campaign, Ad, AdSet, Action
+from adminapp.models import Account, Cost, Cabinet, Campaign, Ad, AdSet, Action, Update
 
 
 def get_data(fbtool_id, date):
@@ -101,7 +101,7 @@ def process_data(cabinet_data, date, currencies, definitive=False):
                 insight['date'] = date
                 insight['definitive'] = definitive
                 insight['amount'] = insight['spend']
-                insight['amount_USD'] = round(float(insight['amount']) * currencies[cabinet.currency.lower()]['inverseRate'], 2)
+                insight['amount_USD'] = round(float(insight['amount']) * currencies[cabinet.currency.lower()]['inverseRate'], 2) if cabinet.currency != 'USD' else insight['amount']
                 del insight['spend']
                 del insight['date_start']
                 del insight['date_stop']
@@ -175,3 +175,5 @@ class Command(BaseCommand):
                 if (date == tomorrow and str_cabinet_pk in tomorrow_data.keys()
                         and 'ads' in tomorrow_data[str_cabinet_pk].keys()):
                     process_data(tomorrow_data[str_cabinet_pk], tomorrow, currencies)
+
+        Update.objects.create(type='costs', datetime=datetime.now())

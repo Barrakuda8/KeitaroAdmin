@@ -9,14 +9,14 @@ import requests
 from django.core.management import BaseCommand
 
 import config
-from adminapp.models import Revenue
+from adminapp.models import Revenue, Update
 from authapp.models import User
 
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        day = "yesterday" if datetime.now(pytz.timezone(config.TIMEZONE)).hour == 0 else "today"
+        day = "yesterday" if datetime.now().hour == 0 else "today"
         payload = json.dumps(
             {"range": {"interval": day, "timezone": "Europe/Moscow"}, "columns": [],
              "metrics": ["clicks", "campaign_unique_clicks", "conversions", "sales", "revenue"],
@@ -59,8 +59,9 @@ class Command(BaseCommand):
 
                     del revenue_data['sub_id_4']
                     revenue_data['buyer'] = buyer
-                    revenue_data['datetime'] = (datetime.strptime(revenue_data['datetime'], '%Y-%m-%d %H:%M:%S')
-                                                .replace(tzinfo=pytz.timezone(config.TIMEZONE)))
+                    revenue_data['datetime'] = (datetime.strptime(revenue_data['datetime'], '%Y-%m-%d %H:%M:%S'))
                     if day == 'yesterday':
                         revenue_data['definitive'] = True
                     Revenue.objects.create(**revenue_data)
+
+        Update.objects.create(type='revenues', datetime=datetime.now())
