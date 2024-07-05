@@ -51,6 +51,7 @@ class Cabinet(models.Model):
     spend_cap = models.FloatField(null=True, blank=True)
     timezone_offset_hours_utc = models.IntegerField(null=True, blank=True)
     viewable_business = models.JSONField(null=True, blank=True)
+    business = models.JSONField(null=True, blank=True)
 
 
 class Campaign(models.Model):

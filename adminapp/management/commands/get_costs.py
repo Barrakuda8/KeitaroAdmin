@@ -129,51 +129,53 @@ class Command(BaseCommand):
             yesterday_data = get_data(account.fbtool_id, yesterday)
             tomorrow_data = get_data(account.fbtool_id, tomorrow)
 
-            today_data = {a['account_id']: a for a in today_data['data']}
-            yesterday_data = {a['account_id']: a for a in yesterday_data['data']}
-            tomorrow_data = {a['account_id']: a for a in tomorrow_data['data']}
+            if 'data' in today_data.keys() and 'data' in yesterday_data.keys() \
+               and 'data' in tomorrow_data.keys():
+                today_data = {a['account_id']: a for a in today_data['data']}
+                yesterday_data = {a['account_id']: a for a in yesterday_data['data']}
+                tomorrow_data = {a['account_id']: a for a in tomorrow_data['data']}
 
-            cab_params = {
-                "key": config.FBTOOL_KEY,
-                "account": account.fbtool_id
-            }
-            cab_response = requests.get('https://fbtool.pro/api/get-adaccounts/', params=cab_params)
-            cab_response_json = cab_response.json()
-            for cab in cab_response_json['data']:
-                cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
-                cab['fbtool_id'] = cab['id']
-                cab['id'] = cab['account_id']
-                del cab['account_id']
-                cab['timezone'] = cab['timezone_name']
-                del cab['timezone_name']
-                cab['status'] = cab['account_status']
-                del cab['account_status']
-                if cabinet_check.exists():
-                    cabinet = cabinet_check.first()
-                    for param, value in cab.items():
-                        setattr(cabinet, param, value)
-                    cabinet.save()
-                else:
-                    cab['account'] = account
-                    Cabinet.objects.create(**cab)
+                cab_params = {
+                    "key": config.FBTOOL_KEY,
+                    "account": account.fbtool_id
+                }
+                cab_response = requests.get('https://fbtool.pro/api/get-adaccounts/', params=cab_params)
+                cab_response_json = cab_response.json()
+                for cab in cab_response_json['data']:
+                    cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
+                    cab['fbtool_id'] = cab['id']
+                    cab['id'] = cab['account_id']
+                    del cab['account_id']
+                    cab['timezone'] = cab['timezone_name']
+                    del cab['timezone_name']
+                    cab['status'] = cab['account_status']
+                    del cab['account_status']
+                    if cabinet_check.exists():
+                        cabinet = cabinet_check.first()
+                        for param, value in cab.items():
+                            setattr(cabinet, param, value)
+                        cabinet.save()
+                    else:
+                        cab['account'] = account
+                        Cabinet.objects.create(**cab)
 
-            for cabinet in account.get_cabinets:
-                date = datetime.now(pytz.timezone(cabinet.timezone)).date()
-                str_cabinet_pk = str(cabinet.pk)
-                if ((date == yesterday or (date == today
-                                           and Cost.objects.filter(date=yesterday, definitive=False,
+                for cabinet in account.get_cabinets:
+                    date = datetime.now(pytz.timezone(cabinet.timezone)).date()
+                    str_cabinet_pk = str(cabinet.pk)
+                    if ((date == yesterday or (date == today
+                                               and Cost.objects.filter(date=yesterday, definitive=False,
+                                                                       ad__adset__campaign__cabinet__pk=cabinet.pk).exists()))
+                            and str_cabinet_pk in yesterday_data.keys() and 'ads' in yesterday_data[str_cabinet_pk].keys()):
+                        process_data(yesterday_data[str_cabinet_pk], yesterday, currencies, date == today)
+
+                    if ((date == today or (date == tomorrow
+                                           and Cost.objects.filter(date=today, definitive=False,
                                                                    ad__adset__campaign__cabinet__pk=cabinet.pk).exists()))
-                        and str_cabinet_pk in yesterday_data.keys() and 'ads' in yesterday_data[str_cabinet_pk].keys()):
-                    process_data(yesterday_data[str_cabinet_pk], yesterday, currencies, date == today)
+                            and str_cabinet_pk in today_data.keys() and 'ads' in today_data[str_cabinet_pk].keys()):
+                        process_data(today_data[str_cabinet_pk], today, currencies, date == tomorrow)
 
-                if ((date == today or (date == tomorrow
-                                       and Cost.objects.filter(date=today, definitive=False,
-                                                               ad__adset__campaign__cabinet__pk=cabinet.pk).exists()))
-                        and str_cabinet_pk in today_data.keys() and 'ads' in today_data[str_cabinet_pk].keys()):
-                    process_data(today_data[str_cabinet_pk], today, currencies, date == tomorrow)
-
-                if (date == tomorrow and str_cabinet_pk in tomorrow_data.keys()
-                        and 'ads' in tomorrow_data[str_cabinet_pk].keys()):
-                    process_data(tomorrow_data[str_cabinet_pk], tomorrow, currencies)
+                    if (date == tomorrow and str_cabinet_pk in tomorrow_data.keys()
+                            and 'ads' in tomorrow_data[str_cabinet_pk].keys()):
+                        process_data(tomorrow_data[str_cabinet_pk], tomorrow, currencies)
 
         Update.objects.create(type='costs', datetime=datetime.now())
