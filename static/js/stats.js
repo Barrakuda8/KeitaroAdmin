@@ -184,7 +184,7 @@ window.addEventListener('load', () => {
             for(let [date, dateData] of Object.entries(buyerData)) {
                 dateData['revenues'] = Math.round(dateData['revenues'] * 100) / 100;
                 dateData['costs'] = Math.round(dateData['costs'] * 100) / 100;
-                let profit = dateData['revenues'] - dateData['costs'];
+                let profit = Math.round((dateData['revenues'] - dateData['costs']) * 100) / 100;
                 let roi = dateData['costs'] != 0 ? Math.round((profit / dateData['costs']) * 10000) / 100 : '-';
                 let stat = {'buyer': buyer, 'date': date, 'profit': profit, 'roi': roi, ...dateData};
                 statsArr.push(stat);
@@ -278,6 +278,35 @@ window.addEventListener('load', () => {
         costs = allCosts.filter((cost) => buyers.includes(cost.fields.ad.buyer_pk));
         revenues = allRevenues.filter((revenue) => buyers.includes(revenue.fields.buyer[0]));
         fill();
+    })
+
+    $('.stats-update').on('click', (e) => {
+        let type = e.target.id.replace('update-', '');
+        $(`.stats-update-loading.${type}`).css('display', '');
+        e.target.style.display = 'none';
+        const token = $('input[name=csrfmiddlewaretoken]').val();
+        $.ajax({
+            method: "post",
+            url: `/main/get_${type}/`,
+            data: {csrfmiddlewaretoken: token},
+            success: (data) => {
+                if(type == 'costs') {
+                    allCosts = JSON.parse(data['costs']);
+                } else {
+                    allRevenues = JSON.parse(data['revenues']);
+                }
+                setData();
+
+                $(`.stats-update-loading.${type}`).css('display', 'none');
+                e.target.style.display = '';
+                let datetime = data['update'];
+                let date = datetime.slice(0, 10).split('-').reverse().join('.');
+                let update = `${date} ${datetime.slice(11, 16)}`;
+                $(`#last-update-${type}`).html(update);
+            },
+            error: (data) => {
+            }
+        });
     })
 
     setData();

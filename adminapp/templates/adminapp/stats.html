@@ -13,9 +13,22 @@
 {% endblock %}
 {% block content %}
     <div class="stats-content">
+        {% csrf_token %}
         <h2 class="stats-label">Последние обновления</h2>
-        <div>Расходы: {{ last_update_costs|date:"d.m.Y H:i" }}</div>
-        <div class="stats-filters">Доходы: {{ last_update_revenues|date:"d.m.Y H:i" }}</div>
+        <div class="stats-updates">
+            Расходы: <span id="last-update-costs">{{ last_update_costs.datetime|date:"d.m.Y H:i" }}</span>
+            {% if user.is_superuser %}
+                <span class="stats-update button" id="update-costs"{% if not last_update_costs.finished %} style="display: none;"{% endif %}>Обновить</span>
+                <img src="{% static 'img/loading.gif' %}" class="stats-update-loading costs"{% if last_update_costs.finished %} style="display: none;"{% endif %}>
+            {% endif %}
+        </div>
+        <div class="stats-updates stats-filters">
+            Доходы: <span id="last-update-revenues">{{ last_update_revenues.datetime|date:"d.m.Y H:i" }}</span>
+            {% if user.is_superuser %}
+                <span class="stats-update button" id="update-revenues"{% if not last_update_revenues.finished %} style="display: none;"{% endif %}>Обновить</span>
+                <img src="{% static 'img/loading.gif' %}" class="stats-update-loading revenues"{% if last_update_revenues.finished %} style="display: none;"{% endif %}>
+            {% endif %}
+        </div>
         <h2 class="stats-label">Фильтр по дате</h2>
         <div class="stats-filters">
             <span class="stats-date standart active" id="{{ today }}">Сегодня</span>

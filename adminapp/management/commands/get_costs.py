@@ -10,7 +10,7 @@ import config
 from adminapp.models import Account, Cost, Cabinet, Campaign, Ad, AdSet, Action, Update
 
 
-def get_data(fbtool_id, date):
+def get_data(fbtool_id, date, cabinet=None):
     params = {
         "key": config.FBTOOL_KEY,
         "account": fbtool_id,
@@ -119,6 +119,7 @@ def process_data(cabinet_data, date, currencies, definitive=False):
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        update = Update.objects.create(type='costs', datetime=datetime.now(), finished=False)
         currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
         today = datetime.now().date()
         yesterday = today - timedelta(days=1)
@@ -178,4 +179,6 @@ class Command(BaseCommand):
                             and 'ads' in tomorrow_data[str_cabinet_pk].keys()):
                         process_data(tomorrow_data[str_cabinet_pk], tomorrow, currencies)
 
-        Update.objects.create(type='costs', datetime=datetime.now())
+        update.finished = True
+        update.save()
+

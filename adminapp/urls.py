@@ -23,4 +23,8 @@ urlpatterns = [
     path('teams/create/', adminapp.TeamCreateView.as_view(), name='create_team'),
     path('teams/edit/<int:pk>/', adminapp.TeamEditView.as_view(), name='edit_team'),
     path('teams/delete/<int:pk>/', adminapp.TeamDeleteView.as_view(), name='delete_team'),
+    path('get_costs/', adminapp.get_costs, name='get_costs'),
+    path('get_revenues/', adminapp.get_revenues, name='get_revenues'),
+    path('get_cabinet_costs/', adminapp.get_cabinet_costs, name='get_cabinet_costs'),
+    path('get_cabinet_costs/', adminapp.get_cabinet_costs, name='get_cabinet_costs'),
 ]

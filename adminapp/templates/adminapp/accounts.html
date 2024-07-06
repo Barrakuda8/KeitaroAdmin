@@ -15,6 +15,7 @@
                     </div>
                     <img src="{% static 'img/arrow.svg' %}" alt=">" class="team-arrow" id="arrow-{{ account.pk }}">
                 </div>
+                {% csrf_token %}
                 <div class="team-hidden" id="hidden-{{ account.pk }}">
                     <div class="team-label">Аккаунт</div>
                     <div class="team-table-wrapper">
@@ -54,6 +55,7 @@
                                     <th>Название</th>
                                     <th>Таймзона</th>
                                     <th>Валюта</th>
+                                    {% if user.is_superuser %}<th></th>{% endif %}
                                     <th></th>
                                     <th></th>
                                     <th>status</th>
@@ -77,6 +79,12 @@
                                         <td>{{ cabinet.name }}</td>
                                         <td>{{ cabinet.timezone }}</td>
                                         <td>{{ cabinet.currency }}</td>
+                                        {% if user.is_superuser %}
+                                            <td>
+                                                <span class="cabinet-update" id="update-{{ cabinet.pk }}"{% if not cabinet.last_update_finished %} style="display: none;"{% endif %}>Обновить</span>
+                                                <img src="{% static 'img/loading.gif' %}" class="stats-update-loading costs" id="img-{{ cabinet.pk }}"{% if cabinet.last_update_finished %} style="display: none;"{% endif %}>
+                                            </td>
+                                        {% endif %}
                                         <td class="teams-td-button"><a href="{% url 'adminapp:edit_cabinet' pk=cabinet.pk %}">Изменить</a></td>
                                         <td class="teams-td-button"><a href="{% url 'adminapp:delete_cabinet' pk=cabinet.pk %}">Удалить</a></td>
                                         <td>{{ cabinet.status }}</td>

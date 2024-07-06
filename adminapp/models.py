@@ -2,6 +2,13 @@ from django.db import models
 from authapp.models import User
 
 
+class Update(models.Model):
+
+    datetime = models.DateTimeField(verbose_name='Дата и время')
+    type = models.TextField(verbose_name='Тип')
+    finished = models.BooleanField(default=True, verbose_name='Закончен')
+
+
 class Account(models.Model):
 
     id = models.PositiveBigIntegerField(primary_key=True, verbose_name='ID')
@@ -52,6 +59,13 @@ class Cabinet(models.Model):
     timezone_offset_hours_utc = models.IntegerField(null=True, blank=True)
     viewable_business = models.JSONField(null=True, blank=True)
     business = models.JSONField(null=True, blank=True)
+
+    @property
+    def last_update_finished(self):
+        update_check = Update.objects.filter(type=f'cabinet-costs-{self.pk}')
+        if update_check.exists():
+            return update_check.first().finished
+        return True
 
 
 class Campaign(models.Model):
@@ -149,10 +163,3 @@ class Revenue(models.Model):
     os_icon = models.TextField(null=True, blank=True)
     os_version = models.TextField(null=True, blank=True)
     definitive = models.BooleanField(default=False, verbose_name='Окончательный вариант')
-
-
-class Update(models.Model):
-
-    datetime = models.DateTimeField(verbose_name='Дата и время')
-    type = models.CharField(max_length=16, verbose_name='Тип')
-

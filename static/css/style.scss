@@ -147,6 +147,21 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     flex-direction: column;
 }
 
+.stats-updates {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.stats-updates .button {
+    margin-left: 15px;
+}
+
+.stats-update-loading {
+    margin-left: 15px;
+    width: 22px;
+}
+
 .stats-label {
     font-size: 18px;
     font-weight: 600;
@@ -368,14 +383,15 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     text-align: center;
 }
 
-.teams-td-button > a {
+.teams-td-button > a, .cabinet-update {
     color: $text-color;
     text-decoration: none;
 }
 
-.teams-td-button > a:hover {
+.teams-td-button > a:hover, .cabinet-update:hover {
     font-weight: 500;
     text-shadow: 1px 1px $shadow-color;
+    cursor: pointer;
 }
 
 .teams-title {
