@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.db import models
 from authapp.models import User
 
@@ -64,7 +66,12 @@ class Cabinet(models.Model):
     def last_update_finished(self):
         update_check = Update.objects.filter(type=f'cabinet-costs-{self.pk}')
         if update_check.exists():
-            return update_check.first().finished
+            update = update_check.last()
+            if not update.finished and datetime.now() >= update.datetime + timedelta(minutes=1):
+                update.finished = True
+                update.save()
+            print(update.finished)
+            return update.finished
         return True
 
 

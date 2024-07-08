@@ -1,6 +1,7 @@
 window.addEventListener('load', () => {
 
     let displayBuyer = $('.stats-cost-buyer').length > 0;
+    let sorting = {'revenue': '', 'cost': '', 'stats': ''}
     let costs, revenues;
     let totalCosts = 0;
     let totalRevenues = 0;
@@ -91,8 +92,12 @@ window.addEventListener('load', () => {
             }
         }
         totalCosts = Math.round(totalCosts * 100) / 100;
-        $('.stats-cost').remove();
-        $('.stats-costs-header').after(htmlString);
+        if(!sorting['cost']) {
+            $('.stats-cost').remove();
+            $('.stats-costs-header').after(htmlString);
+        } else {
+            $(`#${sorting['cost']}`).click();
+        }
         $('#costs-total-amount').html(totalCosts + ' USD');
         $('#costs-total-clicks').html(totalClicks);
         $('#costs-total-views').html(totalViews);
@@ -155,8 +160,12 @@ window.addEventListener('load', () => {
             }
         }
         totalRevenues = Math.round(totalRevenues * 100) / 100;
-        $('.stats-revenue').remove();
-        $('.stats-revenues-header').after(htmlString);
+        if(!sorting['revenue']) {
+            $('.stats-revenue').remove();
+            $('.stats-revenues-header').after(htmlString);
+        } else {
+            $(`#${sorting['revenue']}`).click();
+        }
         $('#revenues-total-amount').html(totalRevenues + ' USD');
         $('#revenues-total-clicks').html(totalClicks);
         $('#revenues-total-conversions').html(totalConversions);
@@ -191,8 +200,12 @@ window.addEventListener('load', () => {
                 htmlString += getStatHtmlString(stat);
             }
         }
-        $(`.stats-stats`).remove();
-        $('.stats-stats-header').after(htmlString);
+        if(!sorting['stats']) {
+            $(`.stats-stats`).remove();
+            $('.stats-stats-header').after(htmlString);
+        } else {
+            $(`#${sorting['stats']}`).click();
+        }
         $('#stats-total-revenues').html(totalRevenues);
         $('#stats-total-costs').html(totalCosts);
         $('#stats-total-profit').html(Math.round((totalRevenues - totalCosts) * 100) / 100);
@@ -219,6 +232,7 @@ window.addEventListener('load', () => {
 
     $('.stats-arrow:not(.stats)').on('click', (e) => {
         let [model, field, direction] = e.target.id.split('-');
+        sorting[model] = e.target.id;
         let obj = model == 'cost' ? costs : revenues;
         if(direction == 'asc') {
             if(field == 'buyer') {
@@ -253,6 +267,7 @@ window.addEventListener('load', () => {
     })
 
     $('.stats-arrow.stats').on('click', (e) => {
+        sorting['stats'] = e.target.id;
         let [model, field, direction] = e.target.id.split('-');
         if(direction == 'asc') {
             statsArr.sort((a, b) => a[field] > b[field] ? 1 : -1);

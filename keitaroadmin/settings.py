@@ -122,11 +122,11 @@ USE_TZ = False
 
 STATIC_URL = 'static/'
 
-if not config.PROD:
-    STATICFILES_DIRS = (
-        BASE_DIR / "static",
-    )
-else:
+
+STATICFILES_DIRS = (
+    BASE_DIR / "static",
+)
+if config.PROD:
     STATIC_ROOT = BASE_DIR / '/var/www/static'
 
 MEDIA_URL = '/media/'

@@ -13,9 +13,10 @@ from adminapp.models import Revenue, Update
 from authapp.models import User
 
 
-def process_data(day):
+def process_data(period):
+    today = datetime.now().date()
     payload = json.dumps(
-        {"range": {"interval": day, "timezone": "Europe/Moscow"}, "columns": [],
+        {"range": {"interval": period, "timezone": "Europe/Moscow"}, "columns": [],
          "metrics": ["clicks", "campaign_unique_clicks", "conversions", "sales", "revenue"],
          "grouping": ["datetime", "campaign", "campaign_group", "os_icon", "os_version", "country", "offer",
                       "sub_id_1",
@@ -67,8 +68,7 @@ def process_data(day):
                 del revenue_data['sub_id_4']
                 revenue_data['buyer'] = buyer
                 revenue_data['datetime'] = (datetime.strptime(revenue_data['datetime'], '%Y-%m-%d %H:%M:%S'))
-                if day == '30_days_ago':
-                    revenue_data['definitive'] = True
+                revenue_data['definitive'] = revenue_data['datetime'].date() != today
                 Revenue.objects.create(**revenue_data)
 
 
@@ -76,8 +76,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         update = Update.objects.create(type='revenues', datetime=datetime.now(), finished=False)
-        day = "30_days_ago" if datetime.now().hour == 18 else "today"
-        process_data(day)
+        period = "6_months_ago" if datetime.now().day == 1 and datetime.now().hour == 0 else "30_days_ago"
+        process_data(period)
 
         update.finished = True
         update.save()
