@@ -91,13 +91,14 @@ class Cabinet(models.Model):
                 "byDay": 1,
                 "ad_account": self.pk
             }
-            response = requests.get('https://fbtool.pro/api/get-statistics/', params=params)
-            cabinet_data = response.json()['data'][0]
+            response = requests.get('https://fbtool.pro/api/get-statistics/', params=params).json()
+            if 'data' in response.keys():
+                cabinet_data = response['data'][0]
 
         if currencies is None:
             currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
-        currency_rate = currencies[self.currency.lower()]['inverseRate']
-        if 'ads' in cabinet_data.keys():
+        currency_rate = currencies[self.currency.lower()]['inverseRate'] if not self.currency == 'USD' else 1
+        if cabinet_data is not None and 'ads' in cabinet_data.keys():
             updated_campaigns = {}
             updated_adsets = {}
             for ad_data in cabinet_data['ads']['data']:
