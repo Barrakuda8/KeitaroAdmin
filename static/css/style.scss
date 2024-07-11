@@ -183,12 +183,12 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     margin-bottom: 20px;
 }
 
-.stats-date, .stats-buyer {
+.stats-date, .stats-buyer, .accounts-update-date {
     margin-right: 10px;
     cursor: pointer;
 }
 
-.stats-buyer:hover, .stats-date:hover, .stats-date.active, .stats-buyer.active {
+.stats-buyer:hover, .stats-date:hover, .stats-date.active, .stats-buyer.active, .accounts-update-date:hover, .accounts-update-date.active {
     font-weight: 500;
     text-shadow: 1px 1px $shadow-color;
 }
@@ -308,7 +308,7 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     align-items: center;
 }
 
-.team-name-block a {
+.team-name-block .button {
     color: $text-color;
     text-decoration: none;
     margin-left: 20px;
@@ -366,11 +366,11 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     text-wrap: nowrap;
 }
 
-.team-lead {
+.team-lead, .accounts-error-indicator {
     width: 15px;
     height: 15px;
     border-radius: 100%;
-    margin-right: 5px;
+    margin-right: 5px !important;
     background-color: #C00;
     margin: 0 auto;
 }
@@ -383,12 +383,12 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     text-align: center;
 }
 
-.teams-td-button > a, .cabinet-update {
+.teams-td-button > a, .stats-update:not(.button) {
     color: $text-color;
     text-decoration: none;
 }
 
-.teams-td-button > a:hover, .cabinet-update:hover {
+.teams-td-button > a:hover, .stats-update:not(.button):hover {
     font-weight: 500;
     text-shadow: 1px 1px $shadow-color;
     cursor: pointer;
@@ -399,4 +399,39 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     font-weight: 600;
     text-align: center;
     margin: 20px;
+}
+
+.error {
+    color: #C00;
+}
+
+.teams-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(155, 155, 155, 0.3);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    display: none;
+}
+
+.accounts-update-background {
+    width: 400px;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: $background-color;
+    border: 1px solid $text-color;
+    border-radius: 10px;
+}
+
+.accounts-update-background .button {
+    width: 100px;
+    margin: 10px auto 0;
+}
+
+.accounts-update-title {
+    margin-bottom: 10px;
 }

@@ -9,22 +9,4 @@ window.addEventListener('load', () => {
             e.target.classList.add('active');
         }
     })
-
-    $('.cabinet-update').on('click', (e) => {
-        let id = e.target.id.replace('update-', '');
-        $(`#img-${id}`).css('display', '');
-        e.target.style.display = 'none';
-        const token = $('input[name=csrfmiddlewaretoken]').val();
-        $.ajax({
-            method: "post",
-            url: '/main/get_cabinet_costs/',
-            data: {cabinet: id, csrfmiddlewaretoken: token},
-            success: (data) => {
-                $(`#img-${id}`).css('display', 'none');
-                e.target.style.display = '';
-            },
-            error: (data) => {
-            }
-        });
-    })
 })

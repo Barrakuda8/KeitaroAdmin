@@ -26,5 +26,5 @@ urlpatterns = [
     path('get_costs/', adminapp.get_costs, name='get_costs'),
     path('get_revenues/', adminapp.get_revenues, name='get_revenues'),
     path('get_cabinet_costs/', adminapp.get_cabinet_costs, name='get_cabinet_costs'),
-    path('get_cabinet_costs/', adminapp.get_cabinet_costs, name='get_cabinet_costs'),
+    path('get_account_costs/', adminapp.get_account_costs, name='get_account_costs'),
 ]

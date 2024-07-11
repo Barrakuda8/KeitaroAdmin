@@ -112,12 +112,24 @@ def get_revenues(request):
 
 @user_passes_test(lambda u: u.is_superuser)
 def get_cabinet_costs(request):
-    cabinet_pk = int(request.POST.get('cabinet'))
+    cabinet_pk = int(request.POST.get('id'))
     cabinet = Cabinet.objects.get(pk=cabinet_pk)
-    date = datetime.now(pytz.timezone(cabinet.timezone)).date()
-    cabinet.update_costs(date_start=date, date_stop=date)
+    date_start = (datetime.strptime(request.POST.get('date_start'), '%Y-%m-%d') - timedelta(days=1)).date()
+    date_stop = (datetime.strptime(request.POST.get('date_stop'), '%Y-%m-%d') + timedelta(days=1)).date()
+    cabinet.update_costs(date_start=date_start, date_stop=date_stop)
 
-    return JsonResponse({'result': 'ok'})
+    return JsonResponse({'result': 'ok', 'error': str(cabinet.error) if cabinet.error else False, 'account': cabinet.account.pk})
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def get_account_costs(request):
+    account_pk = int(request.POST.get('id'))
+    account = Account.objects.get(pk=account_pk)
+    date_start = (datetime.strptime(request.POST.get('date_start'), '%Y-%m-%d') - timedelta(days=1)).date()
+    date_stop = (datetime.strptime(request.POST.get('date_stop'), '%Y-%m-%d') + timedelta(days=1)).date()
+    account.update_costs(date_start, date_stop)
+
+    return JsonResponse({'result': 'ok', 'error': str(account.error) if account.error else False})
 
 
 class HeadAccessMixin:
@@ -270,6 +282,8 @@ class AccountListView(AccessMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Аккаунты'
+        context['today'] = datetime.now().date()
+        context['yesterday'] = context['today'] - timedelta(days=1)
 
         return context
 

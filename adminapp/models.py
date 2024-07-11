@@ -15,6 +15,7 @@ class Update(models.Model):
     datetime = models.DateTimeField(verbose_name='Дата и время')
     type = models.TextField(verbose_name='Тип')
     finished = models.BooleanField(default=True, verbose_name='Закончен')
+    error = models.JSONField(null=True, blank=True)
 
 
 class Account(models.Model):
@@ -33,6 +34,7 @@ class Account(models.Model):
     proxy = models.IntegerField(null=True, blank=True)
     status = models.IntegerField(null=True, blank=True)
     user_agent = models.TextField(null=True, blank=True)
+    error = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.buyer.buyer_id} - {self.id}'
@@ -40,6 +42,77 @@ class Account(models.Model):
     @property
     def get_cabinets(self):
         return self.cabinets.select_related().order_by('id').order_by('name')
+
+    @property
+    def error_cabinets(self):
+        return self.get_cabinets.filter(error__isnull=False).exists()
+
+    @property
+    def last_update_finished(self):
+        update_check = Update.objects.filter(type=f'account-costs-{self.pk}')
+        if update_check.exists():
+            update = update_check.last()
+            if not update.finished and datetime.now() >= update.datetime + timedelta(minutes=5):
+                update.finished = True
+                update.save()
+            return update.finished
+        return True
+
+    def update_costs(self, date_start, date_stop, currencies=None):
+        update = Update.objects.create(type=f'account-costs-{self.pk}', datetime=datetime.now(), finished=False)
+        if currencies is None:
+            currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
+
+        params = {
+            "key": config.FBTOOL_KEY,
+            "account": self.fbtool_id,
+            "dates": f"{date_start} - {date_stop}",
+            "mode": "ads",
+            "status": "all",
+            "byDay": 1
+        }
+        response = requests.get('https://fbtool.pro/api/get-statistics/', params=params)
+        account_data = response.json()
+
+        if 'data' in account_data.keys():
+            self.error = None
+            self.save()
+
+            account_data = {a['account_id']: a for a in account_data['data']}
+
+            cab_params = {
+                "key": config.FBTOOL_KEY,
+                "account": self.fbtool_id
+            }
+            cab_response = requests.get('https://fbtool.pro/api/get-adaccounts/', params=cab_params)
+            cab_response_json = cab_response.json()
+            for cab in cab_response_json['data']:
+                cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
+                cab['fbtool_id'] = cab['id']
+                cab['id'] = cab['account_id']
+                del cab['account_id']
+                cab['timezone'] = cab['timezone_name']
+                del cab['timezone_name']
+                cab['status'] = cab['account_status']
+                del cab['account_status']
+                if cabinet_check.exists():
+                    cabinet = cabinet_check.first()
+                    for param, value in cab.items():
+                        setattr(cabinet, param, value)
+                    cabinet.save()
+                else:
+                    cab['account'] = self
+                    Cabinet.objects.create(**cab)
+
+            for cabinet in self.get_cabinets:
+                str_cabinet_pk = str(cabinet.pk)
+                cabinet.update_costs(cabinet_data=account_data[str_cabinet_pk], currencies=currencies)
+        else:
+            self.error = account_data
+            self.save()
+            update.error = account_data
+        update.finished = True
+        update.save()
 
 
 class Cabinet(models.Model):
@@ -67,13 +140,14 @@ class Cabinet(models.Model):
     timezone_offset_hours_utc = models.IntegerField(null=True, blank=True)
     viewable_business = models.JSONField(null=True, blank=True)
     business = models.JSONField(null=True, blank=True)
+    error = models.JSONField(null=True, blank=True)
 
     @property
     def last_update_finished(self):
         update_check = Update.objects.filter(type=f'cabinet-costs-{self.pk}')
         if update_check.exists():
             update = update_check.last()
-            if not update.finished and datetime.now() >= update.datetime + timedelta(minutes=1):
+            if not update.finished and datetime.now() >= update.datetime + timedelta(minutes=5):
                 update.finished = True
                 update.save()
             return update.finished
@@ -94,6 +168,15 @@ class Cabinet(models.Model):
             response = requests.get('https://fbtool.pro/api/get-statistics/', params=params).json()
             if 'data' in response.keys():
                 cabinet_data = response['data'][0]
+            else:
+                self.error = response
+                self.save()
+                update.error = response
+                update.save()
+
+        if cabinet_data is not None:
+            self.error = None
+            self.save()
 
         if currencies is None:
             currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()

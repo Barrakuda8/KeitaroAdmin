@@ -1,26 +1,36 @@
 {% extends 'adminapp/base.html' %}
 {% load static %}
 {% block js %}
+<link rel="stylesheet" href="{% static 'css/daterangepicker.css' %}">
+<script src="{% static 'js/moment.min.js' %}"></script>
+<script src="{% static 'js/daterangepicker.min.js' %}"></script>
 <script src="{% static 'js/teams.js' %}"></script>
+<script src="{% static 'js/accounts.js' %}"></script>
 {% endblock %}
 {% block content %}
+    {% csrf_token %}
     <div class="stats-content">
         {% for account in object_list %}
             <div class="team-block">
                 <div class="team-visible">
                     <div class="team-name-block">
+                        <div class="accounts-error-indicator error-{{ account.pk }}"{% if not account.error and not account.error_cabinets %} style="display: none;"{% endif %}></div>
                         {{ account }} - {{ account.full_name }}
                         <a href="{% url 'adminapp:edit_account' pk=account.pk %}" class="button">Изменить</a>
-                        <a href="{% url 'adminapp:delete_account' pk=account.pk %}" class="button">Удалить</a> 
+                        <a href="{% url 'adminapp:delete_account' pk=account.pk %}" class="button">Удалить</a>
+                        {% if user.is_superuser %}
+                            <span class="button stats-update" id="account-update-{{ account.pk }}"{% if not account.last_update_finished %} style="display: none;"{% endif %}>Обновить</span>
+                            <img src="{% static 'img/loading.gif' %}" class="stats-update-loading costs" id="account-img-{{ account.pk }}"{% if account.last_update_finished %} style="display: none;"{% endif %}>
+                        {% endif %}
                     </div>
                     <img src="{% static 'img/arrow.svg' %}" alt=">" class="team-arrow" id="arrow-{{ account.pk }}">
                 </div>
-                {% csrf_token %}
                 <div class="team-hidden" id="hidden-{{ account.pk }}">
                     <div class="team-label">Аккаунт</div>
                     <div class="team-table-wrapper">
                         <table class="team-table">
                             <tr>
+                                <th class="error error-{{ account.pk }}"{% if not account.error %} style="display: none;"{% endif %}>error</th>
                                 <th>fbtool_id</th>
                                 <th>access_token</th>
                                 <th>cookie</th>
@@ -33,6 +43,7 @@
                                 <th>user_agent</th>
                             </tr>
                             <tr>
+                                <td class="error error-{{ account.pk }}"{% if not account.error %} style="display: none;"{% endif %}>{{ account.error }}</td>
                                 <td>{{ account.fbtool_id }}</td>
                                 <td>{{ account.access_token }}</td>
                                 <td>{{ account.cookie }}</td>
@@ -51,6 +62,7 @@
                         <div class="team-table-wrapper">
                             <table class="team-table">
                                 <tr>
+                                    <th class="error cell-error-{{ account.pk }}"{% if not account.error_cabinets %} style="display: none;"{% endif %}>error</th>
                                     <th>ID</th>
                                     <th>Название</th>
                                     <th>Таймзона</th>
@@ -75,14 +87,15 @@
                                 </tr>
                                 {% for cabinet in account.get_cabinets %}
                                     <tr>
+                                        <td class="error cell-error-{{ account.pk }} cab-error-{{ cabinet.pk }}"{% if not account.error_cabinets %} style="display: none;"{% endif %}>{% if cabinet.error %}<span>{{ cabinet.error }}</span>{% endif %}</td>
                                         <td>{{ cabinet.pk }}</td>
                                         <td>{{ cabinet.name }}</td>
                                         <td>{{ cabinet.timezone }}</td>
                                         <td>{{ cabinet.currency }}</td>
                                         {% if user.is_superuser %}
                                             <td>
-                                                <span class="cabinet-update" id="update-{{ cabinet.pk }}"{% if not cabinet.last_update_finished %} style="display: none;"{% endif %}>Обновить</span>
-                                                <img src="{% static 'img/loading.gif' %}" class="stats-update-loading costs" id="img-{{ cabinet.pk }}"{% if cabinet.last_update_finished %} style="display: none;"{% endif %}>
+                                                <span class="stats-update" id="cabinet-update-{{ cabinet.pk }}"{% if not cabinet.last_update_finished %} style="display: none;"{% endif %}>Обновить</span>
+                                                <img src="{% static 'img/loading.gif' %}" class="stats-update-loading costs" id="cabinet-img-{{ cabinet.pk }}"{% if cabinet.last_update_finished %} style="display: none;"{% endif %}>
                                             </td>
                                         {% endif %}
                                         <td class="teams-td-button"><a href="{% url 'adminapp:edit_cabinet' pk=cabinet.pk %}">Изменить</a></td>
@@ -112,6 +125,18 @@
         <div class="stats-options-block">
             <a href="{% url 'adminapp:create_account' %}" class="button">Добавить аккаунт</a>
             <a href="{% url 'adminapp:create_cabinet' %}" class="button">Добавить кабинет</a>
+        </div>
+    </div>
+    <div class="teams-background">
+        <div class="accounts-update-background">
+            <div class="accounts-update-title"></div>
+            <div class="stats-filters">
+                <span class="accounts-update-date standart active" id='{{ today|date:"Y-m-d" }}'>Сегодня</span>
+                <span class="accounts-update-date standart" id='{{ yesterday|date:"Y-m-d" }}'>Вчера</span>
+                <span class="accounts-update-date" id="daterangepicker">Выбрать</span>
+                <span class="accounts-update-chosen-date">{{ today|date:"Y-m-d" }}</span>
+            </div>
+            <div class="button accounts-update">Обновить</div>
         </div>
     </div>
 {% endblock %}
