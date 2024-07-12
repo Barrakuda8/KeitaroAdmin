@@ -38,7 +38,7 @@
                                     <td>{{ buyer.first_name }}</td>
                                     <td><div class="team-lead{% if buyer.lead %} active{% endif %}"></div></td>
                                     {% if not user.support_id %}
-                                        <td class="teams-change-password button" id="password-{{ buyer.pk }}">Сменить пароль</td>
+                                        <td class="teams-change-password button" id="password-{{ buyer.buyer_id }}-{{ buyer.pk }}">Сменить пароль</td>
                                         <td class="teams-td-button"><a href="{% url 'adminapp:edit_user' pk=buyer.pk %}">Изменить</a></td>
                                         <td class="teams-td-button"><a href="{% url 'adminapp:delete_user' pk=buyer.pk %}">Удалить</a></td>
                                     {% endif %}
@@ -68,7 +68,7 @@
                         <td>{{ buyer.first_name }}</td>
                         <td><div class="team-lead{% if buyer.lead %} active{% endif %}"></div></td>
                         {% if not user.support_id %}
-                            <td class="teams-change-password button" id="password-{{ buyer.pk }}">Сменить пароль</td>
+                            <td class="teams-change-password button" id="password-{{ buyer.buyer_id }}-{{ buyer.pk }}">Сменить пароль</td>
                             <td class="teams-td-button"><a href="{% url 'adminapp:edit_user' pk=buyer.pk %}">Изменить</a></td>
                             <td class="teams-td-button"><a href="{% url 'adminapp:delete_user' pk=buyer.pk %}">Удалить</a></td>
                         {% endif %}
@@ -91,7 +91,7 @@
                         <tr>
                             <td>{{ support.support_id }}</td>
                             <td>{{ support.first_name }}</td>
-                            <td class="teams-change-password button" id="password-{{ support.pk }}">Сменить пароль</td>
+                            <td class="teams-change-password button" id="password-{{ support.support_id }}-{{ support.pk }}">Сменить пароль</td>
                             <td class="teams-td-button"><a href="{% url 'adminapp:edit_support' pk=support.pk %}">Изменить</a></td>
                             <td class="teams-td-button"><a href="{% url 'adminapp:delete_user' pk=support.pk %}">Удалить</a></td>
                         </tr>
@@ -104,5 +104,35 @@
                 <a href="{% url 'adminapp:create_support' %}" class="button">Добавить саппорта</a>
             </div>
         {% endif %}
+        {% if deleted %}
+            <span class="teams-title">Удалённые баеры</span>
+            <table class="team-table">
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Лид</th>
+                    {% if not user.support_id %}
+                        <th></th>
+                    {% endif %}
+                </tr>
+                {% for buyer in deleted %}
+                    <tr>
+                        <td>{{ buyer.buyer_id }}</td>
+                        <td>{{ buyer.first_name }}</td>
+                        <td><div class="team-lead{% if buyer.lead %} active{% endif %}"></div></td>
+                        {% if not user.support_id %}
+                            <td class="teams-td-button"><a href="{% url 'adminapp:delete_user' pk=buyer.pk %}">Восстановить</a></td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+    <div class="teams-background">
+        <div class="teams-password-background">
+            <div class="teams-password-title" style="text-align: center;">Смена пароля пользователя <span></span></div>
+            <div class="teams-password" style="margin-bottom: 10px; text-align: center;"></div>
+            <div class="button teams-background-change-password">Поменять</div>
+        </div>
     </div>
 {% endblock %}

@@ -24,6 +24,7 @@ class Account(models.Model):
     full_name = models.CharField(max_length=128, default='', verbose_name='Название')
     buyer = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Баер')
     fbtool_id = models.PositiveBigIntegerField(verbose_name='Fbtool ID')
+    is_deleted = models.BooleanField(default=False)
 
     access_token = models.TextField(null=True, blank=True)
     cookie = models.JSONField(null=True, blank=True)
@@ -39,13 +40,21 @@ class Account(models.Model):
     def __str__(self):
         return f'{self.buyer.buyer_id} - {self.id}'
 
+    def delete(self):
+        self.is_deleted = not self.is_deleted
+        self.save()
+
     @property
     def get_cabinets(self):
-        return self.cabinets.select_related().order_by('id').order_by('name')
+        return self.cabinets.select_related().filter(is_deleted=False).order_by('id').order_by('name')
 
     @property
     def error_cabinets(self):
         return self.get_cabinets.filter(error__isnull=False).exists()
+
+    @property
+    def get_deleted_cabinets(self):
+        return self.cabinets.select_related().filter(is_deleted=True).order_by('id').order_by('name')
 
     @property
     def last_update_finished(self):
@@ -122,7 +131,7 @@ class Cabinet(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='cabinets', verbose_name='Аккаунт')
     timezone = models.CharField(max_length=64, verbose_name='Таймзона')
     currency = models.CharField(max_length=8, verbose_name='Валюта')
-    is_deleted = models.BooleanField(default=False, verbose_name='Кабинет удалён')
+    is_deleted = models.BooleanField(default=False)
 
     status = models.IntegerField(null=True, blank=True)
     adspaymentcycle = models.JSONField(null=True, blank=True)
@@ -141,6 +150,10 @@ class Cabinet(models.Model):
     viewable_business = models.JSONField(null=True, blank=True)
     business = models.JSONField(null=True, blank=True)
     error = models.JSONField(null=True, blank=True)
+
+    def delete(self):
+        self.is_deleted = not self.is_deleted
+        self.save()
 
     @property
     def last_update_finished(self):

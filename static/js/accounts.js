@@ -7,14 +7,14 @@ window.addEventListener('load', () => {
         let [type, update, id] = e.target.id.split('-');
         $('.accounts-update').attr('id', `${type}-button-${id}`);
         $('.teams-background').css('display', 'flex');
-        $('.accounts-update-title').html(`${type == 'account' ? 'Аккаунт' : 'Кабинет'} - ${id}`);
+        $('.teams-password-title').html(`${type == 'account' ? 'Аккаунт' : 'Кабинет'} - ${id}`);
     })
 
     $('.teams-background').on('click', (e) => {
         if(e.target.classList.contains('teams-background')) {
             $('.accounts-update').attr('id', '');
             $('.teams-background').css('display', '');
-            $('.accounts-update-title').html('');
+            $('.teams-password-title').html('');
         }
     })
 
@@ -24,7 +24,7 @@ window.addEventListener('load', () => {
         $(`#${type}-update-${id}`).css('display', 'none');
         $('.accounts-update').attr('id', '');
         $('.teams-background').css('display', '');
-        $('.accounts-update-title').html('');
+        $('.teams-password-title').html('');
         const token = $('input[name=csrfmiddlewaretoken]').val();
         $.ajax({
             method: "post",

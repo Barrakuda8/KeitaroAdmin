@@ -12,7 +12,7 @@ class Command(BaseCommand):
         today = datetime.now().date()
         yesterday = today - timedelta(days=1)
         tomorrow = today + timedelta(days=1)
-        accounts = Account.objects.all()
+        accounts = Account.objects.filter(is_deleted=False)
         for account in accounts:
             account.update_costs(yesterday, tomorrow, currencies)
 

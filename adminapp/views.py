@@ -21,7 +21,7 @@ from authapp.forms import TeamEditForm, UserEditForm, UserCreateForm, SupportCre
 from authapp.models import User, Team
 
 
-@user_passes_test(lambda u: not u.support_id)
+@user_passes_test(lambda u: not u.support_id and not u.is_deleted)
 def stats(request):
 
     costs = Cost.objects.filter(date=datetime.today())
@@ -53,7 +53,7 @@ def stats(request):
     return render(request, 'adminapp/stats.html', context=context)
 
 
-@user_passes_test(lambda u: not u.support_id)
+@user_passes_test(lambda u: not u.support_id and not u.is_deleted)
 def filter_by_date(request):
     start = request.GET.get('start_date')
     end = request.GET.get('end_date')
@@ -148,7 +148,7 @@ class SupportAccessMixin:
 
 class AccessMixin:
 
-    @method_decorator(user_passes_test(lambda u: u.is_authenticated))
+    @method_decorator(user_passes_test(lambda u: u.is_authenticated and not u.is_deleted))
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
@@ -228,6 +228,7 @@ class TeamListView(SupportAccessMixin, ListView):
         context['title'] = 'Баеры'
         context['teamless'] = User.objects.filter(team__isnull=True, buyer_id__isnull=False, support_id__isnull=True)
         context['supports'] = User.objects.filter(support_id__isnull=False)
+        context['deleted'] = User.objects.filter(is_deleted=True)
 
         return context
 
@@ -284,16 +285,23 @@ class AccountListView(AccessMixin, ListView):
         context['title'] = 'Аккаунты'
         context['today'] = datetime.now().date()
         context['yesterday'] = context['today'] - timedelta(days=1)
+        if self.request.user.is_superuser or self.request.user.support_id:
+            deleted = Account.objects.filter(is_deleted=True)
+        elif self.request.user.lead:
+            deleted = Account.objects.filter(buyer__team__pk=self.request.user.team.pk, is_deleted=True)
+        else:
+            deleted = Account.objects.filter(buyer__pk=self.request.user.pk, is_deleted=True)
+        context['deleted'] = deleted.order_by('buyer__id').order_by('pk')
 
         return context
 
     def get_queryset(self):
         if self.request.user.is_superuser or self.request.user.support_id:
-            accounts = Account.objects.all()
+            accounts = Account.objects.filter(is_deleted=False)
         elif self.request.user.lead:
-            accounts = Account.objects.filter(buyer__team__pk=self.request.user.team.pk)
+            accounts = Account.objects.filter(buyer__team__pk=self.request.user.team.pk, is_deleted=False)
         else:
-            accounts = Account.objects.filter(buyer__pk=self.request.user.pk)
+            accounts = Account.objects.filter(buyer__pk=self.request.user.pk, is_deleted=False)
         return accounts.order_by('buyer__id').order_by('pk')
 
 

@@ -294,6 +294,15 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     border-top: 1px solid black;
 }
 
+.deleted-account-block {
+    border: 1px solid black;
+    border-bottom: none;
+}
+
+.deleted-account-block:last-child {
+    border-bottom: 1px solid black;
+}
+
 .team-visible {
     width: 100%;
     display: flex;
@@ -370,9 +379,12 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     width: 15px;
     height: 15px;
     border-radius: 100%;
-    margin-right: 5px !important;
     background-color: #C00;
     margin: 0 auto;
+}
+
+.accounts-error-indicator {
+    margin-right: 10px;
 }
 
 .team-lead.active {
@@ -418,7 +430,7 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     display: none;
 }
 
-.accounts-update-background {
+.teams-password-background {
     width: 400px;
     padding: 20px;
     box-sizing: border-box;
@@ -427,11 +439,11 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     border-radius: 10px;
 }
 
-.accounts-update-background .button {
+.teams-password-background .button {
     width: 100px;
     margin: 10px auto 0;
 }
 
-.accounts-update-title {
+.teams-password-title {
     margin-bottom: 10px;
 }

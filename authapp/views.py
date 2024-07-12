@@ -23,12 +23,12 @@ def login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = auth.authenticate(username=username, password=password)
-        if user:
+        if user and not user.is_deleted:
             auth.login(request, user)
-        if request.user.support_id:
-            return HttpResponseRedirect(reverse('adminapp:accounts'))
-        else:
-            return HttpResponseRedirect(reverse('adminapp:stats'))
+            if request.user.support_id:
+                return HttpResponseRedirect(reverse('adminapp:accounts'))
+            else:
+                return HttpResponseRedirect(reverse('adminapp:stats'))
 
     context = {
         'title': 'Авторизация',
