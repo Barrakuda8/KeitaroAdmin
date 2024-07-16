@@ -18,6 +18,23 @@ window.addEventListener('load', () => {
         }
     })
 
+    $('.accounts-update-accounts').on('click', (e) => {
+        e.target.style.display = 'none';
+        $('.stats-update-loading.accounts').css('display', '');
+        const token = $('input[name=csrfmiddlewaretoken]').val();
+        $.ajax({
+            method: "post",
+            url: '/main/update_accounts/',
+            data: {csrfmiddlewaretoken: token},
+            success: (data) => {
+                console.log(1)
+                window.location.reload();
+            },
+            error: (data) => {
+            }
+        });
+    })
+
     $('.accounts-update').on('click', (e) => {
         let [type, button, id] = e.target.id.split('-');
         $(`#${type}-img-${id}`).css('display', '');

@@ -1,3 +1,5 @@
+import random
+import string
 from datetime import datetime, timedelta
 from pprint import pprint
 
@@ -33,8 +35,9 @@ class Account(models.Model):
     is_restricted = models.IntegerField(null=True, blank=True)
     name = models.TextField(null=True, blank=True)
     proxy = models.IntegerField(null=True, blank=True)
-    status = models.IntegerField(null=True, blank=True)
+    status = models.TextField(null=True, blank=True)
     user_agent = models.TextField(null=True, blank=True)
+    bm_token = models.TextField(null=True, blank=True)
     error = models.JSONField(null=True, blank=True)
 
     def __str__(self):
@@ -81,9 +84,9 @@ class Account(models.Model):
             "byDay": 1
         }
         response = requests.get('https://fbtool.pro/api/get-statistics/', params=params)
-        account_data = response.json()
+        account_data = response.json() if response.status_code == 200 else response.status_code
 
-        if 'data' in account_data.keys():
+        if isinstance(account_data, dict) and 'data' in account_data.keys():
             self.error = None
             self.save()
 
@@ -94,7 +97,8 @@ class Account(models.Model):
                 "account": self.fbtool_id
             }
             cab_response = requests.get('https://fbtool.pro/api/get-adaccounts/', params=cab_params)
-            cab_response_json = cab_response.json()
+            cab_response_json = cab_response.json() if response.status_code == 200 else {'data': []}
+
             for cab in cab_response_json['data']:
                 cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
                 cab['fbtool_id'] = cab['id']
@@ -122,6 +126,69 @@ class Account(models.Model):
             update.error = account_data
         update.finished = True
         update.save()
+
+    @classmethod
+    def update_accounts(cls):
+        update = Update.objects.create(type='accounts', datetime=datetime.now(), finished=False)
+        params = {
+            "key": config.FBTOOL_KEY
+        }
+        response = requests.get('https://fbtool.pro/api/get-accounts/', params=params)
+        if response.status_code == 200:
+            response_json = response.json()
+        else:
+            response_json = {}
+            update.error = response.status_code
+            update.save()
+
+        for index, account in response_json.items():
+            if index.isdigit():
+                account_check = Account.objects.filter(pk=int(account['account_id']))
+                account['fbtool_id'] = account['id']
+                account['id'] = account['account_id']
+                del account['account_id']
+
+                buyer_id = account['group_name'].split('_')
+                buyer_id = buyer_id[1] if len(buyer_id) >= 2 else account['group_name']
+
+                buyer_check = User.objects.filter(buyer_id=buyer_id)
+                if buyer_check.exists():
+                    buyer = buyer_check.first()
+                else:
+                    password = ''.join(random.sample(list(string.ascii_letters) +
+                                                     list(map(lambda x: str(x), range(0, 10))) +
+                                                     ['!', '#', '$', '%', '&', '*', '/', ':', ';', '<', '>', '?',
+                                                      '@', '^',
+                                                      '~'], 10))
+                    email = password + '@not.found'
+                    buyer = User.objects.create_user(username=email, email=email, password=password)
+                    buyer.first_name = 'Not found'
+                    buyer.buyer_id = buyer_id
+                    buyer.save()
+
+                account['buyer'] = buyer
+
+                if account_check.exists():
+                    account_obj = account_check.first()
+                    for param, value in account.items():
+                        setattr(account_obj, param, value)
+                    account_obj.save()
+                else:
+                    Account.objects.create(**account)
+
+        update.finished = True
+        update.save()
+
+    @classmethod
+    def last_accounts_update_finished(cls):
+        update_check = Update.objects.filter(type='accounts')
+        if update_check.exists():
+            update = update_check.last()
+            if not update.finished and datetime.now() >= update.datetime + timedelta(minutes=5):
+                update.finished = True
+                update.save()
+            return update.finished
+        return True
 
 
 class Cabinet(models.Model):
@@ -178,8 +245,10 @@ class Cabinet(models.Model):
                 "byDay": 1,
                 "ad_account": self.pk
             }
-            response = requests.get('https://fbtool.pro/api/get-statistics/', params=params).json()
-            if 'data' in response.keys():
+            response = requests.get('https://fbtool.pro/api/get-statistics/', params=params)
+            response = response.json() if response.status_code == 200 else response.status_code
+
+            if isinstance(response, dict) and 'data' in response.keys():
                 cabinet_data = response['data'][0]
             else:
                 self.error = response

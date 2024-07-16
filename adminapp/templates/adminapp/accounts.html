@@ -32,28 +32,28 @@
                             <tr>
                                 <th class="error error-{{ account.pk }}"{% if not account.error %} style="display: none;"{% endif %}>error</th>
                                 <th>fbtool_id</th>
-                                <th>access_token</th>
-                                <th>cookie</th>
                                 <th>group_id</th>
                                 <th>group_name</th>
                                 <th>is_restricted</th>
                                 <th>name</th>
                                 <th>proxy</th>
                                 <th>status</th>
+                                <th>access_token</th>
                                 <th>user_agent</th>
+                                <th>cookie</th>
                             </tr>
                             <tr>
                                 <td class="error error-{{ account.pk }}"{% if not account.error %} style="display: none;"{% endif %}>{{ account.error }}</td>
                                 <td>{{ account.fbtool_id }}</td>
-                                <td>{{ account.access_token }}</td>
-                                <td>{{ account.cookie }}</td>
                                 <td>{{ account.group_id }}</td>
                                 <td>{{ account.group_name }}</td>
                                 <td>{{ account.is_restricted }}</td>
                                 <td>{{ account.name }}</td>
                                 <td>{{ account.proxy }}</td>
                                 <td>{{ account.status }}</td>
+                                <td>{{ account.access_token }}</td>
                                 <td>{{ account.user_agent }}</td>
+                                <td>{{ account.cookie }}</td>
                             </tr>
                         </table>
                     </div>
@@ -176,6 +176,10 @@
         <div class="stats-options-block">
             <a href="{% url 'adminapp:create_account' %}" class="button">Добавить аккаунт</a>
             <a href="{% url 'adminapp:create_cabinet' %}" class="button">Добавить кабинет</a>
+            {% if user.is_superuser %}
+                <span class="accounts-update-accounts button" {% if not last_accounts_update_finished %} style="display: none;"{% endif %}>Обновить</span>
+                <img src="{% static 'img/loading.gif' %}" class="stats-update-loading accounts"{% if last_accounts_update_finished %} style="display: none;"{% endif %}>
+            {% endif %}
         </div>
         {% if deleted %}
             <span class="teams-title">Удалённые аккаунты</span>
@@ -194,27 +198,27 @@
                             <table class="team-table">
                                 <tr>
                                     <th>fbtool_id</th>
-                                    <th>access_token</th>
-                                    <th>cookie</th>
                                     <th>group_id</th>
                                     <th>group_name</th>
                                     <th>is_restricted</th>
                                     <th>name</th>
                                     <th>proxy</th>
                                     <th>status</th>
+                                    <th>access_token</th>
                                     <th>user_agent</th>
+                                    <th>cookie</th>
                                 </tr>
                                 <tr>
                                     <td>{{ account.fbtool_id }}</td>
-                                    <td>{{ account.access_token }}</td>
-                                    <td>{{ account.cookie }}</td>
                                     <td>{{ account.group_id }}</td>
                                     <td>{{ account.group_name }}</td>
                                     <td>{{ account.is_restricted }}</td>
                                     <td>{{ account.name }}</td>
                                     <td>{{ account.proxy }}</td>
                                     <td>{{ account.status }}</td>
+                                    <td>{{ account.access_token }}</td>
                                     <td>{{ account.user_agent }}</td>
+                                    <td>{{ account.cookie }}</td>
                                 </tr>
                             </table>
                         </div>

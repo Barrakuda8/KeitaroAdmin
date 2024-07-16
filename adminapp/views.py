@@ -132,6 +132,12 @@ def get_account_costs(request):
     return JsonResponse({'result': 'ok', 'error': str(account.error) if account.error else False})
 
 
+@user_passes_test(lambda u: u.is_superuser)
+def update_accounts(request):
+    Account.update_accounts()
+    return JsonResponse({'result': 'ok'})
+
+
 class HeadAccessMixin:
 
     @method_decorator(user_passes_test(lambda u: u.is_superuser))
@@ -292,6 +298,7 @@ class AccountListView(AccessMixin, ListView):
         else:
             deleted = Account.objects.filter(buyer__pk=self.request.user.pk, is_deleted=True)
         context['deleted'] = deleted.order_by('buyer__id').order_by('pk')
+        context['last_accounts_update_finished'] = Account.last_accounts_update_finished()
 
         return context
 
