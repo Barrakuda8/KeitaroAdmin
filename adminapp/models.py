@@ -119,7 +119,11 @@ class Account(models.Model):
 
             for cabinet in self.get_cabinets:
                 str_cabinet_pk = str(cabinet.pk)
-                cabinet.update_costs(cabinet_data=account_data[str_cabinet_pk], currencies=currencies)
+                if str_cabinet_pk in account_data.keys():
+                    cabinet.update_costs(cabinet_data=account_data[str_cabinet_pk], currencies=currencies)
+                else:
+                    cabinet.is_deleted = True
+                    cabinet.save()
         else:
             self.error = account_data
             self.save()
@@ -141,8 +145,11 @@ class Account(models.Model):
             update.error = response.status_code
             update.save()
 
+        accounts = []
+
         for index, account in response_json.items():
             if index.isdigit():
+                accounts.append(int(account['account_id']))
                 account_check = Account.objects.filter(pk=int(account['account_id']))
                 account['fbtool_id'] = account['id']
                 account['id'] = account['account_id']
@@ -175,6 +182,11 @@ class Account(models.Model):
                     account_obj.save()
                 else:
                     Account.objects.create(**account)
+
+        for account in Account.objects.filter(is_deleted=False):
+            if account.pk not in accounts:
+                account.is_deleted = True
+                account.save()
 
         update.finished = True
         update.save()
