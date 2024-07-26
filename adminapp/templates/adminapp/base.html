@@ -15,13 +15,15 @@
     <body>
         {% block menu %}
             <div class="menu-block">
-                {% if not user.support_id %}
+                {% if user.is_superuser or user.buyer_id %}
                     <a href="{% url 'adminapp:stats' %}" class="menu-link">Статистика</a>
                 {% endif %}
                 {% if user.is_superuser or user.support_id %}
                     <a href="{% url 'adminapp:teams' %}" class="menu-link">Баеры</a>
                 {% endif %}
-                <a href="{% url 'adminapp:accounts' %}" class="menu-link">Аккаунты</a>
+                {% if user.is_superuser or user.buyer_id or user.support_id %}
+                    <a href="{% url 'adminapp:accounts' %}" class="menu-link">Аккаунты</a>
+                {% endif %}
                 {% if user.is_superuser or user.app_admin or user.buyer_id %}
                     <a href="{% url 'installs:applications' %}" class="menu-link">Приложения</a>
                 {% endif %}

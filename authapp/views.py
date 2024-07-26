@@ -27,6 +27,8 @@ def login(request):
             auth.login(request, user)
             if request.user.support_id:
                 return HttpResponseRedirect(reverse('adminapp:accounts'))
+            elif not request.user.buyer_id and not request.user.is_superuser:
+                return HttpResponseRedirect(reverse('installs:applications'))
             else:
                 return HttpResponseRedirect(reverse('adminapp:stats'))
 
