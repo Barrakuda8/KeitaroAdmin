@@ -21,7 +21,7 @@ from authapp.forms import TeamEditForm, UserEditForm, UserCreateForm, SupportCre
 from authapp.models import User, Team
 
 
-@user_passes_test(lambda u: not u.support_id and not u.is_deleted)
+@user_passes_test(lambda u: u.is_authenticated and not u.support_id and not u.is_deleted)
 def stats(request):
 
     costs = Cost.objects.filter(date=datetime.today())
@@ -53,7 +53,7 @@ def stats(request):
     return render(request, 'adminapp/stats.html', context=context)
 
 
-@user_passes_test(lambda u: not u.support_id and not u.is_deleted)
+@user_passes_test(lambda u: u.is_authenticated and not u.support_id and not u.is_deleted)
 def filter_by_date(request):
     start = request.GET.get('start_date')
     end = request.GET.get('end_date')

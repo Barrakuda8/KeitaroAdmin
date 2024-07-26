@@ -1,0 +1,37 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block js %}
+<script src="{% static 'js/test_push.js' %}"></script>
+{% endblock %}
+{% block content %}
+<div class="form-content">
+    {% csrf_token %}
+    <h1 class="form-title">Тестовый пуш</h1>
+    <div class="form-subblock">
+        <div class="form-label">Заголовок</div>
+        <input type="text" class="form-input" id="input-title">
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Текст</div>
+        <input type="text" class="form-input" id="input-text">
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">External ID</div>
+        <input type="text" class="form-input" id="input-external-id">
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Эмулятор</div>
+        <input type="checkbox" class="form-input" id="input-sandbox">
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Приложение</div>
+        <select class="form-select" id="select-application">
+            {% for app in applications %}
+                <option value="{{ app.pk }}">{{ app.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <span class="push-notification">Некорректный токен</span>
+    <div class="button push-execute">Отправить</div>    
+</div>
+{% endblock %}

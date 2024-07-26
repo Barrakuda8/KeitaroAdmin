@@ -28,6 +28,7 @@ urlpatterns = [
     path('', index, name='index'),
     path('auth/', include('authapp.urls', namespace='authapp')),
     path('main/', include('adminapp.urls', namespace='adminapp')),
+    path('installs/', include('installs.urls', namespace='installs')),
 ]
 
 if config.PROD:

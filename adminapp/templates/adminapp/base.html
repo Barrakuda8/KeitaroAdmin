@@ -22,6 +22,9 @@
                     <a href="{% url 'adminapp:teams' %}" class="menu-link">Баеры</a>
                 {% endif %}
                 <a href="{% url 'adminapp:accounts' %}" class="menu-link">Аккаунты</a>
+                {% if user.is_superuser or user.app_admin or user.buyer_id %}
+                    <a href="{% url 'installs:applications' %}" class="menu-link">Приложения</a>
+                {% endif %}
                 <a href="{% url 'authapp:logout' %}" class="menu-link">Выйти</a>
             </div>
         {% endblock %}

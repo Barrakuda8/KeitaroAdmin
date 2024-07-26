@@ -66,7 +66,7 @@ class SupportCreateForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'support_id')
+        fields = ('email', 'first_name', 'support_id', 'app_admin')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

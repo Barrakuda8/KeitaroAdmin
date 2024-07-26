@@ -83,16 +83,25 @@
   font-weight: 600;
 }
 
-.reset-form {
-  align-items: flex-start;
+.form-select {
+  width: 100%;
+  margin-bottom: 10px;
+  max-height: 100px;
 }
 
-.reset-form .button {
-  margin: 0 auto;
+.push-audience-block {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.reset-form .form-link {
-  margin: 5px auto 0;
+.push-notification {
+  margin: 10px auto;
+  font-size: 18px;
+  color: #C00;
+  display: none;
 }
 
 .delete-content {

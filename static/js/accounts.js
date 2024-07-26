@@ -27,7 +27,6 @@ window.addEventListener('load', () => {
             url: '/main/update_accounts/',
             data: {csrfmiddlewaretoken: token},
             success: (data) => {
-                console.log(1)
                 window.location.reload();
             },
             error: (data) => {

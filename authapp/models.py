@@ -21,6 +21,7 @@ class User(AbstractUser):
     buyer_id = models.CharField(max_length=8, null=True, blank=True, unique=True, verbose_name='ID Баера')
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, related_name='users', null=True, blank=True, verbose_name='Команда')
     is_deleted = models.BooleanField(default=False)
+    app_admin = models.BooleanField(default=False)
 
     def __str__(self):
         if self.buyer_id:

@@ -1,0 +1,69 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block content %}
+    {% csrf_token %}
+    <div class="stats-content">
+        {% if user.app_admin or user.is_superuser %}
+            {% if object_list %}
+                <div class="stats-table-wrapper" style="display: block;">
+                    <table class="stats-table">
+                        <tr>
+                            <th>Название</th>
+                            <th>Bundle</th>
+                            <th></th>
+                            <th></th>
+                            <th>Key ID</th>
+                            <th>Team ID</th>
+                            <th>Access Token</th>
+                        </tr>
+                        {% for app in object_list %}
+                            <tr>
+                                <td>{{ app.name }}</td>
+                                <td>{{ app.bundle }}</td>
+                                <td class="teams-td-button"><a href="{% url 'installs:edit_application' pk=app.pk %}">Изменить</a></td>
+                                <td class="teams-td-button"><a href="{% url 'installs:delete_application' pk=app.pk %}">Удалить</a></td>
+                                <td>{{ app.key_id }}</td>
+                                <td>{{ app.team_id }}</td>
+                                <td>{{ app.access_token }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            {% endif %}
+        {% endif %}
+        <div class="stats-options-block">
+            {% if user.app_admin or user.is_superuser %}
+                <a href="{% url 'installs:create_application' %}" class="button">Добавить приложение</a>
+                <a href="{% url 'installs:make_test_push' %}" class="button">Тестовый пуш</a>
+            {% endif %}
+            <a href="{% url 'installs:make_push' %}" class="button">Отправить пуш</a>
+        </div>
+        {% if user.app_admin or user.is_superuser %}
+            {% if deleted %}
+                <div class="team-label">Удалённые приложения</div>
+                <div class="stats-table-wrapper" style="display: block;">
+                    <table class="stats-table">
+                        <tr>
+                            <th>Название</th>
+                            <th>Bundle</th>
+                            <th></th>
+                            <th>Key ID</th>
+                            <th>Team ID</th>
+                            <th>Access Token</th>
+                        </tr>
+                        {% for app in deleted %}
+                            <tr>
+                                <td>{{ app.name }}</td>
+                                <td>{{ app.bundle }}</td>
+                                <td class="teams-td-button"><a href="{% url 'installs:delete_application' pk=app.pk %}">Восстановить</a></td>
+                                <td>{{ app.key_id }}</td>
+                                <td>{{ app.team_id }}</td>
+                                <td>{{ app.access_token }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div> 
+{% endblock %}

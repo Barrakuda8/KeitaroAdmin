@@ -1,0 +1,78 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block js %}
+<script src="{% static 'js/push.js' %}"></script>
+{% endblock %}
+{% block content %}
+<div class="form-content">
+    {% csrf_token %}
+    <h1 class="form-title">Отправить пуш</h1>
+    <div class="form-subblock">
+        <div class="form-label">Заголовок</div>
+        <input type="text" class="form-input" id="input-title">
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Текст</div>
+        <input type="text" class="form-input" id="input-text">
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Иконка</div>
+        <input type="file" class="form-input" id="input-launch-image">
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Приложение</div>
+        <select class="form-select" id="select-applications" multiple>
+            {% for app in applications %}
+                <option value="{{ app.pk }}">{{ app.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Статус</div>
+        <select class="form-select" id="select-statuses" multiple>
+            {% for value in statuses %}
+                <option value="{{ value.0 }}">{{ value.0 }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if buyers %}
+        <div class="form-subblock">
+            <div class="form-label">Баер</div>
+            <select class="form-select" id="select-buyers" multiple>
+                {% for buyer in buyers %}
+                    <option value="{{ buyer.pk }}">{{ buyer }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% endif %}
+    <div class="form-subblock">
+        <div class="form-label">Language</div>
+        <select class="form-select" id="select-languages" multiple>
+            {% for value in languages %}
+                <option value="{{ value.0 }}">{{ value.0 }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Country flag</div>
+        <select class="form-select" id="select-country-flags" multiple>
+            {% for value in country_flags %}
+                <option value="{{ value.0 }}">{{ value.0 }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Offer</div>
+        <select class="form-select" id="select-offers" multiple>
+            {% for value in offers %}
+                <option value="{{ value.0 }}">{{ value.0 }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="push-audience-block">
+        <span>Аудитория:</span>
+        <span class="push-audience">{{ audience }}</span>
+    </div>
+    <div class="button push-execute">Отправить</div>    
+</div>
+{% endblock %}
