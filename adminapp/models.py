@@ -14,8 +14,9 @@ from authapp.models import User
 
 class Update(models.Model):
 
-    datetime = models.DateTimeField(verbose_name='Дата и время')
+    datetime = models.DateTimeField(verbose_name='Дата и время обновления')
     type = models.TextField(verbose_name='Тип')
+    date = models.DateField(null=True, verbose_name='Дата')
     finished = models.BooleanField(default=True, verbose_name='Закончен')
     error = models.JSONField(null=True, blank=True)
 
@@ -71,77 +72,70 @@ class Account(models.Model):
         return True
 
     def update_costs(self, date_start, date_stop, currencies=None):
-        update = Update.objects.create(type=f'account-costs-{self.pk}', datetime=datetime.now(), finished=False)
         if currencies is None:
             currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
+        days = int((date_stop - date_start).days) + 1
+        for n in range(days):
+            current_date = date_start + timedelta(n)
+            update = Update.objects.create(type=f'account-costs-{self.pk}', datetime=datetime.now(), finished=False,
+                                           date=current_date)
+            response = requests.get(f'https://fbtool.pro/api/get-statistics/?key={config.FBTOOL_KEY}'
+                                    f'&account={self.fbtool_id}&dates={current_date}%20-%20{current_date}'
+                                    f'&mode=ads&status=all&byDay=1')
+            account_data = response.json() if response.status_code == 200 else response.status_code
 
-        params = {
-            "key": config.FBTOOL_KEY,
-            "account": self.fbtool_id,
-            "dates": f"{date_start} - {date_stop}",
-            "mode": "ads",
-            "status": "all",
-            "byDay": 1
-        }
-        response = requests.get('https://fbtool.pro/api/get-statistics/', params=params)
-        account_data = response.json() if response.status_code == 200 else response.status_code
+            if isinstance(account_data, dict) and 'data' in account_data.keys():
+                self.error = None
+                self.save()
 
-        if isinstance(account_data, dict) and 'data' in account_data.keys():
-            self.error = None
-            self.save()
+                try:
+                    account_data = {a['account_id']: a for a in account_data['data']}
 
-            try:
-                account_data = {a['account_id']: a for a in account_data['data']}
+                    cab_response = requests.get(f'https://fbtool.pro/api/get-adaccounts/?key={config.FBTOOL_KEY}'
+                                                f'&account={self.fbtool_id}')
+                    cab_response_json = cab_response.json() if response.status_code == 200 else {'data': []}
 
-                cab_params = {
-                    "key": config.FBTOOL_KEY,
-                    "account": self.fbtool_id
-                }
-                cab_response = requests.get('https://fbtool.pro/api/get-adaccounts/', params=cab_params)
-                cab_response_json = cab_response.json() if response.status_code == 200 else {'data': []}
+                    for cab in cab_response_json['data']:
+                        cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
+                        cab['fbtool_id'] = cab['id']
+                        cab['id'] = cab['account_id']
+                        del cab['account_id']
+                        cab['timezone'] = cab['timezone_name']
+                        del cab['timezone_name']
+                        cab['status'] = cab['account_status']
+                        del cab['account_status']
+                        if cabinet_check.exists():
+                            cabinet = cabinet_check.first()
+                            for param, value in cab.items():
+                                setattr(cabinet, param, value)
+                            cabinet.save()
+                        else:
+                            cab['account'] = self
+                            Cabinet.objects.create(**cab)
 
-                for cab in cab_response_json['data']:
-                    cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
-                    cab['fbtool_id'] = cab['id']
-                    cab['id'] = cab['account_id']
-                    del cab['account_id']
-                    cab['timezone'] = cab['timezone_name']
-                    del cab['timezone_name']
-                    cab['status'] = cab['account_status']
-                    del cab['account_status']
-                    if cabinet_check.exists():
-                        cabinet = cabinet_check.first()
-                        for param, value in cab.items():
-                            setattr(cabinet, param, value)
-                        cabinet.save()
-                    else:
-                        cab['account'] = self
-                        Cabinet.objects.create(**cab)
-
-                for cabinet in self.get_cabinets:
-                    str_cabinet_pk = str(cabinet.pk)
-                    if str_cabinet_pk in account_data.keys():
-                        cabinet.update_costs(cabinet_data=account_data[str_cabinet_pk], currencies=currencies)
-                    else:
-                        cabinet.is_deleted = True
-                        cabinet.save()
-            except Exception as e:
-                update.error = str(e)
-        else:
-            self.error = account_data
-            self.save()
-            update.error = account_data
-        update.finished = True
-        update.save()
+                    for cabinet in self.get_cabinets:
+                        str_cabinet_pk = str(cabinet.pk)
+                        if str_cabinet_pk in account_data.keys():
+                            cabinet.is_deleted = False
+                            cabinet.save()
+                            cabinet.update_costs(cabinet_data=account_data[str_cabinet_pk], currencies=currencies)
+                        else:
+                            cabinet.is_deleted = True
+                            cabinet.save()
+                except Exception as e:
+                    update.error = str(e)
+            else:
+                self.error = account_data
+                self.save()
+                update.error = account_data
+            update.finished = True
+            update.save()
 
     @classmethod
     def update_accounts(cls):
         update = Update.objects.create(type='accounts', datetime=datetime.now(), finished=False)
         try:
-            params = {
-                "key": config.FBTOOL_KEY
-            }
-            response = requests.get('https://fbtool.pro/api/get-accounts/', params=params)
+            response = requests.get(f'https://fbtool.pro/api/get-accounts/?key={config.FBTOOL_KEY}')
             if response.status_code == 200:
                 response_json = response.json()
             else:
@@ -181,16 +175,17 @@ class Account(models.Model):
 
                     if account_check.exists():
                         account_obj = account_check.first()
+                        account_obj.is_deleted = False
                         for param, value in account.items():
                             setattr(account_obj, param, value)
                         account_obj.save()
                     else:
                         Account.objects.create(**account)
-
-            for account in Account.objects.filter(is_deleted=False):
-                if account.pk not in accounts:
-                    account.is_deleted = True
-                    account.save()
+            if accounts:
+                for account in Account.objects.filter(is_deleted=False):
+                    if account.pk not in accounts:
+                        account.is_deleted = True
+                        account.save()
         except Exception as e:
             update.error = str(e)
 
@@ -255,16 +250,9 @@ class Cabinet(models.Model):
         update = Update.objects.create(type=f'cabinet-costs-{self.pk}', datetime=datetime.now(), finished=False)
         try:
             if cabinet_data is None:
-                params = {
-                    "key": config.FBTOOL_KEY,
-                    "account": self.account.fbtool_id,
-                    "dates": f"{date_start} - {date_stop}",
-                    "mode": "ads",
-                    "status": "all",
-                    "byDay": 1,
-                    "ad_account": self.pk
-                }
-                response = requests.get('https://fbtool.pro/api/get-statistics/', params=params)
+                response = requests.get(f'https://fbtool.pro/api/get-statistics/?key={config.FBTOOL_KEY}'
+                                        f'&account={self.account.fbtool_id}&dates={date_start}%20-%20{date_stop}'
+                                        f'&mode=ads&status=all&byDay=1&ad_account={self.pk}')
                 response = response.json() if response.status_code == 200 else response.status_code
 
                 if isinstance(response, dict) and 'data' in response.keys():
