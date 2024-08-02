@@ -54,6 +54,10 @@ class Account(models.Model):
         return self.cabinets.select_related().filter(is_deleted=False).order_by('id')
 
     @property
+    def get_all_cabinets(self):
+        return self.cabinets.select_related().order_by('id')
+
+    @property
     def error_cabinets(self):
         return self.get_cabinets.filter(error__isnull=False).exists()
 
@@ -119,7 +123,7 @@ class Account(models.Model):
             self.error = None
             self.save()
 
-        for cabinet in self.get_cabinets:
+        for cabinet in self.get_all_cabinets:
             if cabs and cabinet.pk in cabs:
                 cabinet.is_deleted = False
                 cabinet.save()
