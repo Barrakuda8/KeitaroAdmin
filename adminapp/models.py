@@ -1,5 +1,6 @@
 import random
 import string
+import time
 from datetime import datetime, timedelta
 from pprint import pprint
 
@@ -14,10 +15,10 @@ from authapp.models import User
 
 class Update(models.Model):
 
-    datetime = models.DateTimeField(verbose_name='Дата и время обновления')
+    datetime = models.DateTimeField(auto_now=True, verbose_name='Дата и время обновления')
     type = models.TextField(verbose_name='Тип')
     date = models.DateField(null=True, verbose_name='Дата')
-    finished = models.BooleanField(default=True, verbose_name='Закончен')
+    finished = models.BooleanField(default=False, verbose_name='Закончен')
     error = models.JSONField(null=True, blank=True)
 
 
@@ -50,7 +51,7 @@ class Account(models.Model):
 
     @property
     def get_cabinets(self):
-        return self.cabinets.select_related().filter(is_deleted=False).order_by('id').order_by('name')
+        return self.cabinets.select_related().filter(is_deleted=False).order_by('id')
 
     @property
     def error_cabinets(self):
@@ -58,7 +59,7 @@ class Account(models.Model):
 
     @property
     def get_deleted_cabinets(self):
-        return self.cabinets.select_related().filter(is_deleted=True).order_by('id').order_by('name')
+        return self.cabinets.select_related().filter(is_deleted=True).order_by('id')
 
     @property
     def last_update_finished(self):
@@ -74,68 +75,71 @@ class Account(models.Model):
     def update_costs(self, date_start, date_stop, currencies=None):
         if currencies is None:
             currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
-        days = int((date_stop - date_start).days) + 1
-        for n in range(days):
-            current_date = date_start + timedelta(n)
-            update = Update.objects.create(type=f'account-costs-{self.pk}', datetime=datetime.now(), finished=False,
-                                           date=current_date)
-            response = requests.get(f'https://fbtool.pro/api/get-statistics/?key={config.FBTOOL_KEY}'
-                                    f'&account={self.fbtool_id}&dates={current_date}%20-%20{current_date}'
-                                    f'&mode=ads&status=all&byDay=1')
-            account_data = response.json() if response.status_code == 200 else response.status_code
 
-            if isinstance(account_data, dict) and 'data' in account_data.keys():
-                self.error = None
-                self.save()
+        update = Update.objects.create(type=f'account-costs-{self.pk}')
+        cabs = []
+        try:
+            while True:
+                cab_response = requests.get(f'https://fbtool.pro/api/get-adaccounts/?key={config.FBTOOL_KEY}'
+                                            f'&account={self.fbtool_id}')
+                if cab_response.status_code != 429:
+                    break
+                time.sleep(5)
+            cab_response_json = cab_response.json() if cab_response.status_code == 200 else {'data': []}
 
-                try:
-                    account_data = {a['account_id']: a for a in account_data['data']}
-
-                    cab_response = requests.get(f'https://fbtool.pro/api/get-adaccounts/?key={config.FBTOOL_KEY}'
-                                                f'&account={self.fbtool_id}')
-                    cab_response_json = cab_response.json() if response.status_code == 200 else {'data': []}
-
-                    for cab in cab_response_json['data']:
-                        cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
-                        cab['fbtool_id'] = cab['id']
-                        cab['id'] = cab['account_id']
-                        del cab['account_id']
-                        cab['timezone'] = cab['timezone_name']
-                        del cab['timezone_name']
-                        cab['status'] = cab['account_status']
-                        del cab['account_status']
-                        if cabinet_check.exists():
-                            cabinet = cabinet_check.first()
-                            for param, value in cab.items():
-                                setattr(cabinet, param, value)
-                            cabinet.save()
-                        else:
-                            cab['account'] = self
-                            Cabinet.objects.create(**cab)
-
-                    for cabinet in self.get_cabinets:
-                        str_cabinet_pk = str(cabinet.pk)
-                        if str_cabinet_pk in account_data.keys():
-                            cabinet.is_deleted = False
-                            cabinet.save()
-                            cabinet.update_costs(cabinet_data=account_data[str_cabinet_pk], currencies=currencies)
-                        else:
-                            cabinet.is_deleted = True
-                            cabinet.save()
-                except Exception as e:
-                    update.error = str(e)
+            if 'data' in cab_response_json.keys():
+                for cab in cab_response_json['data']:
+                    cabinet_check = Cabinet.objects.filter(pk=cab['account_id'])
+                    cab['fbtool_id'] = cab['id']
+                    cab['id'] = cab['account_id']
+                    cabs.append(int(cab['id']))
+                    del cab['account_id']
+                    cab['timezone'] = cab['timezone_name']
+                    del cab['timezone_name']
+                    cab['status'] = cab['account_status']
+                    del cab['account_status']
+                    if cabinet_check.exists():
+                        cabinet = cabinet_check.first()
+                        for param, value in cab.items():
+                            setattr(cabinet, param, value)
+                        cabinet.save()
+                    else:
+                        cab['account'] = self
+                        Cabinet.objects.create(**cab)
             else:
-                self.error = account_data
+                update.error = cab_response_json
+                update.save()
+                self.error = cab_response_json
                 self.save()
-                update.error = account_data
-            update.finished = True
+        except Exception as e:
+            update.error = str(e)
             update.save()
+
+        if update.error is None:
+            self.error = None
+            self.save()
+
+        for cabinet in self.get_cabinets:
+            if cabs and cabinet.pk in cabs:
+                cabinet.is_deleted = False
+                cabinet.save()
+                cabinet.update_costs(date_stop=date_stop, date_start=date_start, currencies=currencies)
+            else:
+                cabinet.is_deleted = True
+                cabinet.save()
+
+        update.finished = True
+        update.save()
 
     @classmethod
     def update_accounts(cls):
-        update = Update.objects.create(type='accounts', datetime=datetime.now(), finished=False)
+        update = Update.objects.create(type='accounts')
         try:
-            response = requests.get(f'https://fbtool.pro/api/get-accounts/?key={config.FBTOOL_KEY}')
+            while True:
+                response = requests.get(f'https://fbtool.pro/api/get-accounts/?key={config.FBTOOL_KEY}')
+                if response.status_code != 429:
+                    break
+                time.sleep(5)
             if response.status_code == 200:
                 response_json = response.json()
             else:
@@ -246,125 +250,95 @@ class Cabinet(models.Model):
             return update.finished
         return True
 
-    def update_costs(self, date_start=None, date_stop=None, cabinet_data=None, currencies=None):
-        update = Update.objects.create(type=f'cabinet-costs-{self.pk}', datetime=datetime.now(), finished=False)
-        try:
-            if cabinet_data is None:
-                response = requests.get(f'https://fbtool.pro/api/get-statistics/?key={config.FBTOOL_KEY}'
-                                        f'&account={self.account.fbtool_id}&dates={date_start}%20-%20{date_stop}'
-                                        f'&mode=ads&status=all&byDay=1&ad_account={self.pk}')
-                response = response.json() if response.status_code == 200 else response.status_code
+    def update_costs(self, date_start=None, date_stop=None, currencies=None):
+        today = datetime.now(pytz.timezone(self.timezone)).date()
+        days = int((date_stop - date_start).days) + 1
+        for n in range(days):
+            current_date = date_start + timedelta(n)
+            if not Cost.objects.filter(date=current_date, definitive=True).exists() and not current_date > today:
+                update = Update.objects.create(type=f'cabinet-costs-{self.pk}', date=current_date)
+                try:
+                    cabinet_data = None
+                    while True:
+                        response = requests.get(f'https://fbtool.pro/api/get-statistics-paging/?key={config.FBTOOL_KEY}'
+                                                f'&account={self.account.fbtool_id}&dates={date_start}%20-%20{date_stop}'
+                                                f'&mode=campaigns&status=all&byDay=1&ad_account={self.pk}&pageSize=100')
+                        if response.status_code != 429:
+                            break
+                        time.sleep(5)
+                    response = response.json() if response.status_code == 200 else response.status_code
 
-                if isinstance(response, dict) and 'data' in response.keys():
-                    cabinet_data = response['data'][0]
-                else:
-                    self.error = response
-                    self.save()
-                    update.error = response
-                    update.save()
-
-            if cabinet_data is not None:
-                self.error = None
-                self.save()
-
-            if currencies is None:
-                currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
-            currency_rate = currencies[self.currency.lower()]['inverseRate'] if not self.currency == 'USD' else 1
-            if cabinet_data is not None and 'ads' in cabinet_data.keys():
-                updated_campaigns = {}
-                updated_adsets = {}
-                for ad_data in cabinet_data['ads']['data']:
-                    campaign_id = int(ad_data['campaign']['id'])
-                    if campaign_id not in updated_campaigns.keys():
-                        campaign_check = Campaign.objects.filter(pk=campaign_id)
-                        campaign_data = ad_data['campaign']
-                        if campaign_check.exists():
-                            campaign = campaign_check.first()
-                            campaign.name = campaign_data['name']
-                            campaign.status = campaign_data['status']
-                            campaign.effective_status = campaign_data['effective_status']
-                            campaign.save()
-                            updated_campaigns[campaign_id] = campaign
-                        else:
-                            campaign_data['cabinet'] = self
-                            campaign = Campaign.objects.create(**campaign_data)
+                    if isinstance(response, dict) and 'data' in response.keys():
+                        cabinet_data = response['data'][0]
+                        self.error = None
+                        self.save()
                     else:
-                        campaign = updated_campaigns[campaign_id]
+                        self.error = response
+                        self.save()
+                        update.error = response
+                        update.save()
 
-                    adset_id = int(ad_data['adset']['id'])
-                    if adset_id not in updated_adsets.keys():
-                        adset_check = AdSet.objects.filter(pk=adset_id)
-                        adset_data = ad_data['adset']
-                        if adset_check.exists():
-                            adset = adset_check.first()
-                            adset.name = adset_data['name']
-                            adset.status = adset_data['status']
-                            adset.effective_status = adset_data['effective_status']
-                            adset.save()
-                            updated_adsets[adset_id] = adset
-                        else:
-                            adset_data['campaign'] = campaign
-                            adset = AdSet.objects.create(**adset_data)
-                    else:
-                        adset = updated_adsets[adset_id]
+                    if currencies is None:
+                        currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
+                    currency_rate = currencies[self.currency.lower()]['inverseRate'] if not self.currency == 'USD' else 1
+                    if cabinet_data is not None and 'campaigns' in cabinet_data.keys():
+                        for campaign_data in cabinet_data['campaigns']['data']:
+                            campaign_id = int(campaign_data['id'])
+                            campaign_check = Campaign.objects.filter(pk=campaign_id)
+                            insights = None
+                            if 'insights' in campaign_data.keys():
+                                insights = campaign_data['insights']['data']
+                                del campaign_data['insights']
+                            if campaign_check.exists():
+                                campaign = campaign_check.first()
+                                campaign.name = campaign_data['name']
+                                campaign.status = campaign_data['status']
+                                campaign.effective_status = campaign_data['effective_status']
+                                campaign.save()
+                            else:
+                                campaign_data['cabinet'] = self
+                                campaign = Campaign.objects.create(**campaign_data)
 
-                    ad_id = int(ad_data['id'])
-                    ad_check = Ad.objects.filter(pk=ad_id)
-                    insights = None
-                    if 'insights' in ad_data.keys():
-                        insights = ad_data['insights']['data']
-                        del ad_data['insights']
-                    if ad_check.exists():
-                        ad = ad_check.first()
-                        ad.name = ad_data['name']
-                        ad.status = ad_data['status']
-                        ad.effective_status = ad_data['effective_status']
-                        ad.creative = ad_data['creative']
-                        ad.save()
-                    else:
-                        ad_data['adset'] = adset
-                        del ad_data['campaign']
-                        ad = Ad.objects.create(**ad_data)
-                    if insights is not None:
-                        for insight in insights:
-                            cost_check = Cost.objects.filter(ad__pk=ad.pk, date=insight['date_start'])
-                            if not cost_check.exists() or not cost_check.first().definitive:
-                                cost_check.delete()
-                                actions = []
-                                cpat = []
+                            if insights is not None:
+                                for insight in insights:
+                                    cost_check = Cost.objects.filter(campaign__pk=campaign.pk, date=insight['date_start'])
+                                    if not cost_check.exists() or not cost_check.first().definitive:
+                                        cost_check.delete()
+                                        actions = []
+                                        cpat = []
 
-                                if 'actions' in insight.keys():
-                                    actions = insight['actions']
-                                    del insight['actions']
-                                if 'cost_per_action_type' in insight.keys():
-                                    cpat = insight['cost_per_action_type']
-                                    del insight['cost_per_action_type']
+                                        if 'actions' in insight.keys():
+                                            actions = insight['actions']
+                                            del insight['actions']
+                                        if 'cost_per_action_type' in insight.keys():
+                                            cpat = insight['cost_per_action_type']
+                                            del insight['cost_per_action_type']
 
-                                insight['ad'] = ad
-                                insight['date'] = insight['date_start']
-                                insight['amount'] = insight['spend']
-                                insight['amount_USD'] = round(float(insight['amount']) * currency_rate,
-                                                              2) if self.currency != 'USD' else insight['amount']
-                                if (datetime.strptime(insight['date_start'], '%Y-%m-%d').date()
-                                        < datetime.now(pytz.timezone(self.timezone)).date()):
-                                    insight['definitive'] = True
-                                del insight['spend']
-                                del insight['date_start']
-                                del insight['date_stop']
-                                cost = Cost.objects.create(**insight)
+                                        insight['campaign'] = campaign
+                                        insight['date'] = insight['date_start']
+                                        insight['amount'] = insight['spend']
+                                        insight['amount_USD'] = round(float(insight['amount']) * currency_rate,
+                                                                      2) if self.currency != 'USD' else insight['amount']
+                                        if (datetime.strptime(insight['date_start'], '%Y-%m-%d').date()
+                                                < datetime.now(pytz.timezone(self.timezone)).date()):
+                                            insight['definitive'] = True
+                                        del insight['spend']
+                                        del insight['date_start']
+                                        del insight['date_stop']
+                                        cost = Cost.objects.create(**insight)
 
-                                actions_to_create = {
-                                    a['action_type']: {'count': a['value'], 'type': a['action_type'], 'cost': cost}
-                                    for a in actions}
-                                for action in cpat:
-                                    actions_to_create[action['action_type']]['value'] = action['value']
+                                        actions_to_create = {
+                                            a['action_type']: {'count': a['value'], 'type': a['action_type'], 'cost': cost}
+                                            for a in actions}
+                                        for action in cpat:
+                                            actions_to_create[action['action_type']]['value'] = action['value']
 
-                                for action in actions_to_create.values():
-                                    Action.objects.create(**action)
-        except Exception as e:
-            update.error = str(e)
-        update.finished = True
-        update.save()
+                                        for action in actions_to_create.values():
+                                            Action.objects.create(**action)
+                except Exception as e:
+                    update.error = str(e)
+                update.finished = True
+                update.save()
 
 
 class Campaign(models.Model):
@@ -374,6 +348,11 @@ class Campaign(models.Model):
     name = models.TextField(null=True, blank=True)
     status = models.TextField(null=True, blank=True)
     cabinet = models.ForeignKey(Cabinet, on_delete=models.CASCADE, related_name='campaigns', verbose_name='Кабинет')
+
+    def natural_key(self):
+        cabinet = self.cabinet
+        buyer = cabinet.account.buyer
+        return {'buyer_pk': buyer.pk, "buyer_id": buyer.buyer_id, "cabinet_pk": cabinet.pk, "currency": cabinet.currency}
 
 
 class AdSet(models.Model):
@@ -403,7 +382,8 @@ class Ad(models.Model):
 class Cost(models.Model):
 
     date = models.DateField(verbose_name='Дата')
-    ad = models.ForeignKey(Ad, on_delete=models.CASCADE, related_name='costs', verbose_name='Объявление')
+    ad = models.ForeignKey(Ad, null=True, blank=True, on_delete=models.CASCADE, related_name='costs', verbose_name='Объявление')
+    campaign = models.ForeignKey(Campaign, null=True, on_delete=models.CASCADE, related_name='costs', verbose_name='Кампания')
     amount = models.FloatField(verbose_name='Расход')
     amount_USD = models.FloatField(null=True, verbose_name='Расход USD')
     clicks = models.PositiveIntegerField(null=True, blank=True, verbose_name='Клики')

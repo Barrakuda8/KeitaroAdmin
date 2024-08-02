@@ -75,7 +75,7 @@ def process_data(period):
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        update = Update.objects.create(type='revenues', datetime=datetime.now(), finished=False)
+        update = Update.objects.create(type='revenues')
         period = "6_months_ago" if datetime.now().day == 1 and datetime.now().hour == 0 else "30_days_ago"
         process_data(period)
 

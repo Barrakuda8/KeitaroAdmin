@@ -51,9 +51,9 @@ window.addEventListener('load', () => {
     const getCostHtmlString = (cost) => {
         return `<tr class="stats-cost">
                     <td><div class="stats-status${cost.fields.definitive ? ' definitive' : ''}"></div>${cost.fields.date}</td>
-                    ${displayBuyer ? `<td>${cost.fields.ad.buyer_id}</td>` : ''}
-                    <td>${cost.fields.ad.cabinet_pk}</td>
-                    <td class="stats-td-number">${cost.fields.amount } ${cost.fields.ad.currency}</td>
+                    ${displayBuyer ? `<td>${cost.fields.campaign.buyer_id}</td>` : ''}
+                    <td>${cost.fields.campaign.cabinet_pk}</td>
+                    <td class="stats-td-number">${cost.fields.amount } ${cost.fields.campaign.currency}</td>
                     <td class="stats-td-number">${cost.fields.amount_USD} USD</td>
                     <td class="stats-td-number">${cost.fields.clicks}</td>
                     <td class="stats-td-number">${cost.fields.cost_per_unique_click}</td>
@@ -80,7 +80,7 @@ window.addEventListener('load', () => {
             totalClicks += cost.fields.clicks;
             totalViews += cost.fields.views;
 
-            let buyerId = cost.fields.ad.buyer_id;
+            let buyerId = cost.fields.campaign.buyer_id;
             if(!Object.keys(stats).includes(buyerId)) {
                 stats[buyerId] = {};
             }
@@ -237,24 +237,24 @@ window.addEventListener('load', () => {
         if(direction == 'asc') {
             if(field == 'buyer') {
                 if(model == 'cost') {
-                    obj.sort((a, b) => a.fields.ad['buyer_id'] > b.fields.ad['buyer_id'] ? 1 : -1);
+                    obj.sort((a, b) => a.fields.campaign['buyer_id'] > b.fields.campaign['buyer_id'] ? 1 : -1);
                 } else {
                     obj.sort((a, b) => a.fields.buyer[1] > b.fields.buyer[1] ? 1 : -1);
                 }
             } else if(field == 'cabinet') {
-                obj.sort((a, b) => a.fields.ad['cabinet_pk'] > b.fields.ad['cabinet_pk'] ? 1 : -1);
+                obj.sort((a, b) => a.fields.campaign['cabinet_pk'] > b.fields.campaign['cabinet_pk'] ? 1 : -1);
             } else {
                 obj.sort((a, b) => a.fields[field] > b.fields[field] ? 1 : -1);
             }
         } else {
             if(field == 'buyer') {
                 if(model == 'cost') {
-                    obj.sort((a, b) => a.fields.ad['buyer_id'] < b.fields.ad['buyer_id'] ? 1 : -1);
+                    obj.sort((a, b) => a.fields.campaign['buyer_id'] < b.fields.campaign['buyer_id'] ? 1 : -1);
                 } else {
                     obj.sort((a, b) => a.fields.buyer[1] < b.fields.buyer[1] ? 1 : -1);
                 }
             } else if(field == 'cabinet') {
-                obj.sort((a, b) => a.fields.ad['cabinet_pk'] < b.fields.ad['cabinet_pk'] ? 1 : -1);
+                obj.sort((a, b) => a.fields.campaign['cabinet_pk'] < b.fields.campaign['cabinet_pk'] ? 1 : -1);
             } else {
                 obj.sort((a, b) => a.fields[field] < b.fields[field] ? 1 : -1);
             }
@@ -290,7 +290,7 @@ window.addEventListener('load', () => {
             buyers.push(id);
             e.target.classList.add('active');
         }
-        costs = allCosts.filter((cost) => buyers.includes(cost.fields.ad.buyer_pk));
+        costs = allCosts.filter((cost) => buyers.includes(cost.fields.campaign.buyer_pk));
         revenues = allRevenues.filter((revenue) => buyers.includes(revenue.fields.buyer[0]));
         fill();
     })

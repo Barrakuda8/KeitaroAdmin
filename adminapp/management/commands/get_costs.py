@@ -9,7 +9,7 @@ from adminapp.models import Account, Update
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        update = Update.objects.create(type='costs', datetime=datetime.now(), finished=False)
+        update = Update.objects.create(type='costs')
         currencies = requests.get('https://www.floatrates.com/daily/usd.json').json()
 
         Account.update_accounts()
