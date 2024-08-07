@@ -1,0 +1,47 @@
+{% extends 'adminapp/base.html' %}
+{% load static %}
+{% block content %}
+    {% csrf_token %}
+    <div class="stats-content">
+        {% if object_list %}
+            <div class="stats-table-wrapper" style="display: block;">
+                <table class="stats-table">
+                    <tr>
+                        <th>Создан</th>
+                        <th>Пользователь</th>
+                        <th>Тип</th>
+                        <th>Заголовок</th>
+                        <th></th>
+                        <th></th>
+                        <th>Language</th>
+                        <th>Offer</th>
+                        <th>Country flag</th>
+                        <th>Баеры</th>
+                        <th>Приложения</th>
+                    </tr>
+                    {% for push in object_list %}
+                        <tr>
+                            <td>{{ push.created_at }}</td>
+                            <td>{{ push.user }}</td>
+                            <td>{{ push.get_type }}</td>
+                            <td>{{ push.title }}</td>
+                            <td class="teams-td-button"><a href="{% url 'installs:edit_push' pk=push.pk %}">Изменить</a></td>
+                            <td class="teams-td-button"><a href="{% url 'installs:delete_push' pk=push.pk %}">Удалить</a></td>
+                            <td>{% if push.languages %}{{ push.languages }}{% endif %}</td>
+                            <td>{% if push.offers %}{{ push.offers }}{% endif %}</td>
+                            <td>{% if push.country_flags %}{{ push.country_flags }}{% endif %}</td>
+                            <td>{% if push.buyers %}{{ push.get_buyers }}{% endif %}</td>
+                            <td>{% if push.applications %}{{ push.get_applications }}{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}
+        <div class="stats-options-block">
+            {% if user.app_admin or user.is_superuser %}
+                <a href="{% url 'installs:make_test_push' %}" class="button">Тестовый пуш</a>
+            {% endif %}
+            <a href="{% url 'installs:make_push' %}" class="button">Отправить пуш</a>
+        </div>
+    </div> 
+{% endblock %}

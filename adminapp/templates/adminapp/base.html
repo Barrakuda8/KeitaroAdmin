@@ -26,6 +26,7 @@
                 {% endif %}
                 {% if user.is_superuser or user.app_admin or user.buyer_id %}
                     <a href="{% url 'installs:applications' %}" class="menu-link">Приложения</a>
+                    <a href="{% url 'installs:pushes' %}" class="menu-link">Пуши</a>
                 {% endif %}
                 <a href="{% url 'authapp:logout' %}" class="menu-link">Выйти</a>
             </div>

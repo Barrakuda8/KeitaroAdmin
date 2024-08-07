@@ -1,35 +1,44 @@
 {% extends 'adminapp/base.html' %}
 {% load static %}
+{% block js %}
+<link rel="stylesheet" href="{% static 'css/daterangepicker.css' %}">
+<script src="{% static 'js/moment.min.js' %}"></script>
+<script src="{% static 'js/daterangepicker.min.js' %}"></script>
+<script src="{% static 'js/applications.js' %}"></script>
+{% endblock %}
 {% block content %}
     {% csrf_token %}
     <div class="stats-content">
-        {% if user.app_admin or user.is_superuser %}
-            {% if object_list %}
-                <div class="stats-table-wrapper" style="display: block;">
-                    <table class="stats-table">
+        {% if object_list %}
+            <div class="stats-table-wrapper" style="display: block;">
+                <table class="stats-table">
+                    <tr>
+                        <th>Название</th>
+                        <th>Bundle</th>
+                        <th>Campaign ID</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th>Key ID</th>
+                        <th>Team ID</th>
+                    </tr>
+                    {% for app in object_list %}
                         <tr>
-                            <th>Название</th>
-                            <th>Bundle</th>
-                            <th></th>
-                            <th></th>
-                            <th>Key ID</th>
-                            <th>Team ID</th>
-                            <th>Access Token</th>
+                            <td id="app-name-{{ app.pk }}">{{ app.name }}</td>
+                            <td>{{ app.bundle }}</td>
+                            <td>{{ app.campaign_id }}</td>
+                            <td>
+                                <span class="stats-update" id="app-update-{{ app.pk }}">Обновить</span>
+                                <img src="{% static 'img/loading.gif' %}" class="stats-update-loading" id="app-img-{{ app.pk }}" style="display: none;">
+                            </td>
+                            <td class="teams-td-button"><a href="{% url 'installs:edit_application' pk=app.pk %}">Изменить</a></td>
+                            <td class="teams-td-button"><a href="{% url 'installs:delete_application' pk=app.pk %}">Удалить</a></td>
+                            <td>{{ app.key_id }}</td>
+                            <td>{{ app.team_id }}</td>
                         </tr>
-                        {% for app in object_list %}
-                            <tr>
-                                <td>{{ app.name }}</td>
-                                <td>{{ app.bundle }}</td>
-                                <td class="teams-td-button"><a href="{% url 'installs:edit_application' pk=app.pk %}">Изменить</a></td>
-                                <td class="teams-td-button"><a href="{% url 'installs:delete_application' pk=app.pk %}">Удалить</a></td>
-                                <td>{{ app.key_id }}</td>
-                                <td>{{ app.team_id }}</td>
-                                <td>{{ app.access_token }}</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
         {% endif %}
         <div class="stats-options-block">
             {% if user.app_admin or user.is_superuser %}
@@ -38,32 +47,42 @@
             {% endif %}
             <a href="{% url 'installs:make_push' %}" class="button">Отправить пуш</a>
         </div>
-        {% if user.app_admin or user.is_superuser %}
-            {% if deleted %}
-                <div class="team-label">Удалённые приложения</div>
-                <div class="stats-table-wrapper" style="display: block;">
-                    <table class="stats-table">
+        {% if deleted %}
+            <div class="team-label">Удалённые приложения</div>
+            <div class="stats-table-wrapper" style="display: block;">
+                <table class="stats-table">
+                    <tr>
+                        <th>Название</th>
+                        <th>Bundle</th>
+                        <th>Campaign ID</th>
+                        <th></th>
+                        <th>Key ID</th>
+                        <th>Team ID</th>
+                    </tr>
+                    {% for app in deleted %}
                         <tr>
-                            <th>Название</th>
-                            <th>Bundle</th>
-                            <th></th>
-                            <th>Key ID</th>
-                            <th>Team ID</th>
-                            <th>Access Token</th>
+                            <td>{{ app.name }}</td>
+                            <td>{{ app.bundle }}</td>
+                            <td>{{ app.campaign_id }}</td>
+                            <td class="teams-td-button"><a href="{% url 'installs:delete_application' pk=app.pk %}">Восстановить</a></td>
+                            <td>{{ app.key_id }}</td>
+                            <td>{{ app.team_id }}</td>
                         </tr>
-                        {% for app in deleted %}
-                            <tr>
-                                <td>{{ app.name }}</td>
-                                <td>{{ app.bundle }}</td>
-                                <td class="teams-td-button"><a href="{% url 'installs:delete_application' pk=app.pk %}">Восстановить</a></td>
-                                <td>{{ app.key_id }}</td>
-                                <td>{{ app.team_id }}</td>
-                                <td>{{ app.access_token }}</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
         {% endif %}
     </div> 
+    <div class="teams-background">
+        <div class="teams-password-background">
+            <div class="teams-password-title"></div>
+            <div class="stats-filters">
+                <span class="accounts-update-date standart active" id='{{ today|date:"Y-m-d" }}'>Сегодня</span>
+                <span class="accounts-update-date standart" id='{{ yesterday|date:"Y-m-d" }}'>Вчера</span>
+                <span class="accounts-update-date" id="daterangepicker">Выбрать</span>
+                <span class="accounts-update-chosen-date">{{ today|date:"Y-m-d" }}</span>
+            </div>
+            <div class="button accounts-update">Обновить</div>
+        </div>
+    </div>
 {% endblock %}

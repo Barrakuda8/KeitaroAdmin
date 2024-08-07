@@ -42,6 +42,7 @@
 .form-label, .reset-form label {
   margin-bottom: 5px;
   font-size: 16px;
+  font-weight: 600;
 }
 
 .form-input, .reset-form input:not([type=submit]) {
@@ -102,6 +103,10 @@
   font-size: 18px;
   color: #C00;
   display: none;
+}
+
+.form-input.incorrect, .form-select.incorrect {
+  border-color: #C00;
 }
 
 .delete-content {

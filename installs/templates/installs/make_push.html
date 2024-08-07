@@ -27,7 +27,7 @@
             {% endfor %}
         </select>
     </div>
-    <div class="form-subblock">
+    <div class="form-subblock" id="statuses-subblock">
         <div class="form-label">Статус</div>
         <select class="form-select" id="select-statuses" multiple>
             {% for value in statuses %}
@@ -72,6 +72,71 @@
     <div class="push-audience-block">
         <span>Аудитория:</span>
         <span class="push-audience">{{ audience }}</span>
+    </div>
+    <div class="form-subblock">
+        <div class="form-label">Тип уведомления</div>
+        <select class="form-select" id="select-type">
+            <option value="normal">Разовое</option>
+            <option value="timed">По времени</option>
+            <option value="status">По событию</option>
+        </select>
+    </div>
+    <div class="form-subblock" id="days-subblock" style="display: none;">
+        <div class="form-label">День недели</div>
+        <select class="form-select fake" id="select-days" multiple>
+            <option value="0">Понедельник</option>
+            <option value="1">Вторник</option>
+            <option value="2">Среда</option>
+            <option value="3">Четверг</option>
+            <option value="4">Пятница</option>
+            <option value="5">Суббота</option>
+            <option value="6">Воскресенье</option>
+        </select>
+    </div>
+    <div class="form-subblock" id="hours-subblock" style="display: none;">
+        <div class="form-label">Время</div>
+        <div class="push-audience-block">
+            <span>Сейчас:</span>
+            <span class="push-current-time">{{ current_time }}</span>
+        </div>
+        <select class="form-select fake" id="select-hours" multiple>
+            <option value="0">00:00</option>
+            <option value="1">01:00</option>
+            <option value="2">02:00</option>
+            <option value="3">03:00</option>
+            <option value="4">04:00</option>
+            <option value="5">05:00</option>
+            <option value="6">06:00</option>
+            <option value="7">07:00</option>
+            <option value="8">08:00</option>
+            <option value="9">09:00</option>
+            <option value="10">10:00</option>
+            <option value="11">11:00</option>
+            <option value="12">12:00</option>
+            <option value="13">13:00</option>
+            <option value="14">14:00</option>
+            <option value="15">15:00</option>
+            <option value="16">16:00</option>
+            <option value="17">17:00</option>
+            <option value="18">18:00</option>
+            <option value="19">19:00</option>
+            <option value="20">20:00</option>
+            <option value="21">21:00</option>
+            <option value="22">22:00</option>
+            <option value="23">23:00</option>
+        </select>
+    </div>
+    <div class="form-subblock" id="status-subblock" style="display: none;">
+        <div class="form-label">Событие</div>
+        <select class="form-select" id="select-status">
+            <option value="install">Install</option>
+            <option value="reg">Registration</option>
+            <option value="dep">Deposit</option>
+        </select>
+    </div>
+    <div class="form-subblock" id="timedelta-subblock" style="display: none;">
+        <div class="form-label">Через какое время (в минутах)</div>
+        <input type="number" class="form-input" id="input-timedelta">
     </div>
     <div class="button push-execute">Отправить</div>    
 </div>

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import json
 import random
 import string
@@ -15,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 import config
 from authapp.models import User
-from installs.forms import AppEditForm
+from installs.forms import AppEditForm, StatusPushEditForm, TimedPushEditForm
 from installs.models import Install, Application, Push
 
 
@@ -30,15 +31,13 @@ def register_install(request):
         payload = json.dumps({
             "columns": [],
             "metrics": ["campaign_unique_clicks", "conversions", "sales", "revenue"],
-            "grouping": ["datetime", "campaign", "stream","stream_id", "sub_id", "country_flag", "language", "ip",
+            "grouping": ["datetime", "campaign", "stream", "stream_id", "sub_id", "country_flag", "language", "ip",
                          "os", "os_version", "sub_id_1", "sub_id_2", "sub_id_3", "sub_id_4", "sub_id_5", "sub_id_6",
                          "sub_id_7", "sub_id_8", "sub_id_9", "sub_id_10", "sub_id_11", "sub_id_12", "sub_id_13",
                          "sub_id_14", "sub_id_15", "sub_id_16", "sub_id_17", "sub_id_18", "sub_id_19", "sub_id_20",
                          "sub_id_21", "sub_id_22", "sub_id_23", "sub_id_24", "sub_id_25", "sub_id_26", "sub_id_27",
                          "sub_id_28", "sub_id_29", "sub_id_30", "external_id"],
             "filters": [
-                # {"name": "campaign_group_id", "operator": "IN_LIST", "expression": [55]},
-                # {"name": "is_unique_campaign", "operator": "IS_TRUE", "expression": None},
                 {"name": "external_id", "operator": "EQUALS", "expression": external_id}
             ],
             "sort": [{"name": "sub_id_10", "order": "desc"}],
@@ -89,6 +88,43 @@ def register_install(request):
         return JsonResponse({'response': 'missing params', 'status_code': 400})
 
 
+@csrf_exempt
+def change_install(request):
+    if 'external_id' in request.POST and 'status' in request.POST:
+        external_id = request.POST.get('external_id')
+
+        install = Install.objects.filter(external_id=external_id)
+
+        if not Install.objects.filter(external_id=external_id).exists():
+            return JsonResponse({'response': 'install doesn\'t exists', 'status_code': 400})
+
+        status = request.POST.get('status')
+        install = install.first()
+        now = datetime.now().replace(second=0, microsecond=0)
+        if status == 'reg':
+            install.registered_at = now
+        elif status == 'dep':
+            install.purchased_at = now
+        else:
+            return JsonResponse({'response': 'incorrect status', 'status_code': 400})
+        install.status = status
+        install.save()
+
+        return JsonResponse({'response': 'ok', 'status_code': 200})
+    else:
+        return JsonResponse({'response': 'missing params', 'status_code': 400})
+
+
+@user_passes_test(lambda u: u.is_authenticated and (u.is_superuser or u.app_admin or u.buyer_id) and not u.is_deleted)
+def get_installs(request):
+    app_pk = int(request.POST.get('id'))
+    app = Application.objects.get(pk=app_pk)
+    time_from = datetime.strptime(request.POST.get('date_start'), '%Y-%m-%d')
+    time_to = datetime.strptime(request.POST.get('date_stop'), '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+    app.get_installs(time_from, time_to)
+    return JsonResponse({'result': 'ok'})
+
+
 @user_passes_test(lambda u: u.is_authenticated and (u.is_superuser or u.app_admin or u.buyer_id) and not u.is_deleted)
 def make_push(request):
     installs = Install.objects.filter(application__isnull=False, application__is_deleted=False,
@@ -100,11 +136,12 @@ def make_push(request):
     elif request.user.lead:
         installs = Install.objects.filter(buyer__team__pk=request.user.team.pk)
     else:
-        installs = Install.objects.filter(buyer__pk=request.user.team.pk)
+        installs = Install.objects.filter(buyer__pk=request.user.pk)
 
     context = {
         'title': 'Отправка пуша',
         'audience': len(installs),
+        'current_time': datetime.now().time().replace(microsecond=0, second=0),
         'languages': installs.filter(language__isnull=False).order_by('language').values_list('language').distinct(),
         'country_flags': installs.filter(country_flag__isnull=False).order_by('country_flag')
         .values_list('country_flag').distinct(),
@@ -129,71 +166,42 @@ def make_test_push(request):
 
 @user_passes_test(lambda u: u.is_authenticated and (u.is_superuser or u.app_admin or u.buyer_id) and not u.is_deleted)
 def execute_push(request):
-    languages = request.POST.getlist('languages')
-    country_flags = request.POST.getlist('country_flags')
-    offers = request.POST.getlist('offers')
-    applications = request.POST.getlist('applications')
-    buyers = request.POST.getlist('buyers')
-    statuses = request.POST.getlist('statuses')
+    print(request.POST)
+    type_ = request.POST.get('type')
+    languages = request.POST.getlist('languages[]')
+    country_flags = request.POST.getlist('country_flags[]')
+    offers = request.POST.getlist('offers[]')
+    applications = request.POST.getlist('applications[]')
+    buyers = request.POST.getlist('buyers[]')
+    statuses = request.POST.getlist('statuses[]') if type_ != 'status' else request.POST.get('statuses')
     title = request.POST.get('title')
     text = request.POST.get('text')
     launch_image = request.FILES.get('launch_image') if 'launch_image' in request.FILES.keys() else None
-
-    installs = Install.objects.filter(application__isnull=False, application__is_deleted=False,
-                                      application__key_id__isnull=False, application__team_id__isnull=False,
-                                      application__key__isnull=False)
-
-    if request.user.is_superuser or request.user.app_admin:
-        pass
-    elif request.user.lead:
-        installs = installs.filter(buyer__team__pk=request.user.team.pk)
-    else:
-        installs = installs.filter(buyer__pk=request.user.team.pk)
-    if languages:
-        installs = installs.filter(language__in=languages)
-    if country_flags:
-        installs = installs.filter(country_flag__in=country_flags)
-    if offers:
-        installs = installs.filter(sub_id_2__in=offers)
-    if applications:
-        installs = installs.filter(application__pk__in=map(lambda x: int(x), applications))
-    if statuses:
-        installs = installs.filter(status__in=statuses)
-    if buyers:
-        installs = installs.filter(buyer__pk__in=map(lambda x: int(x), buyers))
+    days = request.POST.getlist('days[]')
+    hours = request.POST.getlist('hours[]')
+    timedelta_ = request.POST.get('timedelta')
 
     push = Push.objects.create(user=request.user, title=title, text=text, launch_image=launch_image,
                                languages=', '.join(languages),
                                country_flags=', '.join(country_flags),
                                offers=', '.join(offers),
                                applications=', '.join(applications),
-                               statuses=', '.join(statuses),
-                               buyers=', '.join(buyers))
+                               statuses=', '.join(statuses) if type_ != 'status' else statuses,
+                               buyers=', '.join(buyers),
+                               type=type_)
 
-    applications = installs.values_list('application__pk').distinct()
-
-    for app_pk in applications:
-        application = Application.objects.get(pk=app_pk[0])
-        client = ApnsClient(
-            use_sandbox=False,
-            team_id=application.team_id,
-            auth_key_id=application.key_id,
-            auth_key_filepath=application.key.path,
-        )
-        payload_alert = PayloadAlert(title=title, body=text, launch_image=push.launch_image.url) \
-            if push.launch_image else PayloadAlert(title=title, body=text)
-        payload = Payload(alert=payload_alert, badge=1, sound="default")
-        config_ = ApnsConfig(topic=application.bundle)
-        app_installs = installs.filter(application__pk=app_pk[0])
-
-        for install in app_installs:
-            asyncio.run(
-                client.send_message(
-                    device_token=install.external_id,
-                    payload=payload,
-                    apns_config=config_,
-                )
-            )
+    if type_ == 'normal':
+        push.send(data={'languages': languages, 'country_flags': country_flags, 'offers': offers,
+                        'applications': applications, 'statuses': statuses, 'buyers': buyers})
+    elif type_ == 'timed' and days and hours:
+        push.days = '|'.join(days) + '|'
+        push.hours = '|'.join(hours) + '|'
+        push.save()
+    elif type_ == 'status' and timedelta_ and timedelta_.isdigit() and statuses:
+        push.timedelta = int(timedelta_)
+        push.save()
+    else:
+        return JsonResponse({'result': 'not ok'})
 
     return JsonResponse({'result': 'ok'})
 
@@ -249,7 +257,7 @@ def check_push_audience(request):
     elif request.user.lead:
         installs = installs.filter(buyer__team__pk=request.user.team.pk)
     else:
-        installs = installs.filter(buyer__pk=request.user.team.pk)
+        installs = installs.filter(buyer__pk=request.user.pk)
     if languages:
         installs = installs.filter(language__in=languages)
     if country_flags:
@@ -265,7 +273,7 @@ def check_push_audience(request):
     return JsonResponse({'result': 'ok', 'audience': len(installs)})
 
 
-class AppListAccessMixin:
+class PushAccessMixin:
 
     @method_decorator(user_passes_test(lambda u:
                                        u.is_authenticated and (u.app_admin or u.is_superuser or u.buyer_id)
@@ -282,7 +290,7 @@ class AppAccessMixin:
         return super().dispatch(*args, **kwargs)
 
 
-class AppListView(AppListAccessMixin, ListView):
+class AppListView(AppAccessMixin, ListView):
     model = Application
     template_name = 'installs/applications.html'
     # paginate_by = 9
@@ -291,6 +299,8 @@ class AppListView(AppListAccessMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Приложения'
         context['deleted'] = Application.objects.filter(is_deleted=True).order_by('name')
+        context['today'] = datetime.now().date()
+        context['yesterday'] = context['today'] - timedelta(days=1)
         return context
 
     def get_queryset(self):
@@ -332,5 +342,60 @@ class AppDeleteView(AppAccessMixin, DeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Удаление приложения'
+
+        return context
+
+
+class PushListView(PushAccessMixin, ListView):
+    model = Push
+    template_name = 'installs/pushes.html'
+    # paginate_by = 9
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Пуши'
+        return context
+
+    def get_queryset(self):
+        pushes = Push.objects.filter(type__in=['status', 'timed'])
+        if self.request.user.is_superuser or self.request.user.app_admin:
+            pass
+        elif self.request.user.lead:
+            pushes = pushes.filter(user__team__pk=self.request.user.team.pk)
+        else:
+            pushes = pushes.filter(user__pk=self.request.user.pk)
+        return pushes.order_by('pk')
+
+
+class PushEditView(PushAccessMixin, UpdateView):
+    model = Push
+    template_name = 'installs/edit_push.html'
+    success_url = reverse_lazy('installs:pushes')
+
+    def get_form_class(self):
+        return StatusPushEditForm if self.get_object().type == 'status' else TimedPushEditForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Редактирование пуша'
+        context['current_time'] = datetime.now().time().replace(microsecond=0, second=0)
+
+        return context
+
+    def get_form_kwargs(self, *args, **kwargs):
+        kwargs = super(PushEditView, self).get_form_kwargs()
+        kwargs['user_id'] = self.get_object().user.pk
+        return kwargs
+
+
+class PushDeleteView(PushAccessMixin, DeleteView):
+    model = Push
+    template_name = 'installs/delete_push.html'
+    success_url = reverse_lazy('installs:pushes')
+    fields = '__all__'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Удаление пуша'
 
         return context

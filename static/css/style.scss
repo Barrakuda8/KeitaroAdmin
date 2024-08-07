@@ -49,6 +49,7 @@ $shadow-color: rgba(155, 155, 155, 0.7);
 .form-label, .reset-form label {
     margin-bottom: 5px;
     font-size: 16px;
+    font-weight: 600;
 }
 
 .form-input, .reset-form input:not([type="submit"]) {
@@ -109,6 +110,10 @@ $shadow-color: rgba(155, 155, 155, 0.7);
     font-size: 18px;
     color: #C00;
     display: none;
+}
+
+.form-input.incorrect, .form-select.incorrect {
+    border-color: #C00;
 }
 
 // DELETE
