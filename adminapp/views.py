@@ -32,11 +32,11 @@ def stats(request):
         buyers = User.objects.filter(buyer_id__isnull=False)
     elif request.user.lead:
         team = request.user.team.pk
-        costs = costs.filter(ad__adset__campaign__cabinet__account__buyer__team__pk=team)
+        costs = costs.filter(campaign__cabinet__account__buyer__team__pk=team)
         revenues = revenues.filter(buyer__team__pk=team)
         buyers = User.objects.filter(team__pk=team)
     else:
-        costs = costs.filter(ad__adset__campaign__cabinet__account__buyer__pk=request.user.pk)
+        costs = costs.filter(campaign__cabinet__account__buyer__pk=request.user.pk)
         revenues = revenues.filter(buyer__pk=request.user.pk)
 
     context = {
@@ -66,10 +66,10 @@ def filter_by_date(request):
         pass
     elif request.user.lead:
         team = request.user.team.pk
-        costs = costs.filter(ad__adset__campaign__cabinet__account__buyer__team__pk=team)
+        costs = costs.filter(campaign__cabinet__account__buyer__team__pk=team)
         revenues = revenues.filter(buyer__team__pk=team)
     else:
-        costs = costs.filter(ad__adset__campaign__cabinet__account__buyer__pk=request.user.pk)
+        costs = costs.filter(campaign__cabinet__account__buyer__pk=request.user.pk)
         revenues = revenues.filter(buyer__pk=request.user.pk)
 
     costs = serializers.serialize("json", costs, use_natural_foreign_keys=True)

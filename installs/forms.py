@@ -88,7 +88,6 @@ class StatusPushEditForm(forms.ModelForm):
         push.offers = None if not push.offers else ', '.join(eval(push.offers))
         push.buyers = None if not push.buyers else ', '.join(eval(push.buyers))
         push.applications = None if not push.applications else ', '.join(eval(push.applications))
-        push.statuses = eval(push.statuses)[0]
         push.save()
         return push
 

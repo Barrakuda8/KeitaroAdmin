@@ -190,6 +190,8 @@ class Push(models.Model):
         return self.languages.split(', ')
 
     def send(self, now=None, data=None):
+        with open('pushes.txt', 'a') as f:
+            f.write(f'{datetime.now().replace(microsecond=0)} - start\n')
         installs = Install.objects.filter(application__isnull=False, application__is_deleted=False,
                                           application__key_id__isnull=False, application__team_id__isnull=False,
                                           application__key__isnull=False)
@@ -243,6 +245,8 @@ class Push(models.Model):
             app_installs = installs.filter(application__pk=app_pk[0])
 
             for install in app_installs:
+                with open('pushes.txt', 'a') as f:
+                    f.write(f'{datetime.now().replace(microsecond=0)} - {install.pk}\n')
                 try:
                     asyncio.run(
                         client.send_message(
@@ -252,4 +256,5 @@ class Push(models.Model):
                         )
                     )
                 except BadDeviceToken:
-                    pass
+                    with open('pushes.txt', 'a') as f:
+                        f.write(f'{datetime.now().replace(microsecond=0)} - baddevicetoken\n')
