@@ -41,7 +41,7 @@
             {% if user.app_admin or user.is_superuser %}
                 <a href="{% url 'installs:make_test_push' %}" class="button">Тестовый пуш</a>
             {% endif %}
-            <a href="{% url 'installs:make_push' %}" class="button">Отправить пуш</a>
+            <a href="{% url 'installs:make_push' %}" class="button">Создать пуш</a>
         </div>
     </div> 
 {% endblock %}

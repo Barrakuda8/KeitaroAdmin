@@ -6,7 +6,7 @@ from installs.models import Push
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        now = datetime.now().replace(microsecond=0) + timedelta(minutes=1)
+        now = datetime.now().replace(microsecond=0)
         if now.minute == 0:
             day = now.weekday()
             hour = now.hour

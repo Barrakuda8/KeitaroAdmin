@@ -48,7 +48,8 @@ INSTALLED_APPS = [
 CRONJOBS = [
     ('2 * * * *', 'django.core.management.call_command', ['get_revenues']),
     ('3 */2 * * *', 'django.core.management.call_command', ['get_costs']),
-    ('*/2 * * * *', 'django.core.management.call_command', ['send_pushes']),
+    ('* * * * *', 'django.core.management.call_command', ['send_pushes']),
+    ('* * * * *', 'django.core.management.call_command', ['get_installs']),
 ]
 
 MIDDLEWARE = [
