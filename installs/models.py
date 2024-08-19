@@ -97,6 +97,7 @@ class Install(models.Model):
     buyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='installs')
     application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, related_name='installs')
     status = models.CharField(max_length=16, default='install')
+    created_at = models.DateTimeField(auto_now=True)
     registered_at = models.DateTimeField(null=True, blank=True)
     purchased_at = models.DateTimeField(null=True, blank=True)
     campaign = models.TextField(null=True, blank=True)
@@ -220,6 +221,8 @@ class Push(models.Model):
             time = now - timedelta(minutes=self.timedelta)
             start = time.replace(second=0)
             stop = time.replace(second=59)
+            if self.statuses == 'install':
+                installs = installs.filter(status='install', created_at__gte=start, created_at__lte=stop)
             if self.statuses == 'reg':
                 installs = installs.filter(status='reg', registered_at__gte=start, registered_at__lte=stop)
             if self.statuses == 'dep':
