@@ -6,12 +6,26 @@ from datetime import datetime, timedelta
 from pprint import pprint
 
 import requests
+from aiogram import Bot
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from django.db import models
 from kalyke import ApnsClient, PayloadAlert, Payload, ApnsConfig
 from kalyke.exceptions import BadDeviceToken
 
 import config
 from authapp.models import User
+
+
+async def send_message(text, sent, error):
+    bot = Bot(token=config.PUSHES_LOG_BOT_TOKEN,
+              default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    for user_id in config.PUSHES_LOG_BOT_USERS:
+        if len(sent) > 0:
+            await bot.send_message(chat_id=user_id, text=text + '🟢\n' + '\n'.join(sent))
+        if len(error) > 0:
+            await bot.send_message(chat_id=user_id, text=text + '🔴\n' + '\n'.join(error))
+    await bot.session.close()
 
 
 class Application(models.Model):
@@ -247,6 +261,9 @@ class Push(models.Model):
             config_ = ApnsConfig(topic=application.bundle)
             app_installs = installs.filter(application__pk=app_pk[0])
 
+            sent_pushes = []
+            error_pushes = []
+
             for install in app_installs:
                 with open('pushes.txt', 'a') as f:
                     f.write(f'{datetime.now().replace(microsecond=0)} - {install.pk}\n')
@@ -258,6 +275,28 @@ class Push(models.Model):
                             apns_config=config_,
                         )
                     )
+                    sent_pushes.append(install.external_id)
                 except BadDeviceToken:
                     with open('pushes.txt', 'a') as f:
                         f.write(f'{datetime.now().replace(microsecond=0)} - baddevicetoken\n')
+                    error_pushes.append(f'\nИнстал: {install.external_id}\nОшибка: BadDeviceToken')
+                except Exception as e:
+                    with open('pushes.txt', 'a') as f:
+                        f.write(f'{datetime.now().replace(microsecond=0)} - {e}\n')
+                    error_pushes.append(f'\nИнстал: {install.external_id}\nОшибка: {e}')
+
+            data = {
+                'normal': 'Разовый',
+                'timed': 'По времени',
+                'status': 'По событию',
+            }
+            text = (f'Приложение: {application.name}\n'
+                    f'Заголовок: {self.title if self.title else '-'}\n'
+                    f'Описание: {self.text if self.text else '-'}\n'
+                    f'Страны: {self.country_flags if self.country_flags else '-'}\n'
+                    f'Языки: {self.languages if self.languages else '-'}\n'
+                    f'Оферы: {self.offers if self.offers else '-'}\n'
+                    f'Тип: {data[self.type]}\n'
+                    f'Статус отправки: ')
+
+            asyncio.run(send_message(text, sent_pushes, error_pushes))
