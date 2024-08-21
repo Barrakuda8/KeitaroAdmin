@@ -22,9 +22,9 @@ async def send_message(text, sent, error):
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     for user_id in config.PUSHES_LOG_BOT_USERS:
         if len(sent) > 0:
-            await bot.send_message(chat_id=user_id, text=text + '🟢\n' + '\n'.join(sent))
+            await bot.send_message(chat_id=user_id, text=text + f'🟢\nАудитория: {len(sent)}\n\n' + '\n\n'.join(sent))
         if len(error) > 0:
-            await bot.send_message(chat_id=user_id, text=text + '🔴\n' + '\n'.join(error))
+            await bot.send_message(chat_id=user_id, text=text + f'🔴\nАудитория: {len(error)}\n' + '\n'.join(error))
     await bot.session.close()
 
 
