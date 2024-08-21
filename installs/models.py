@@ -291,11 +291,11 @@ class Push(models.Model):
                 'status': 'По событию',
             }
             text = (f'Приложение: {application.name}\n'
-                    f'Заголовок: {self.title if self.title else '-'}\n'
-                    f'Описание: {self.text if self.text else '-'}\n'
-                    f'Страны: {self.country_flags if self.country_flags else '-'}\n'
-                    f'Языки: {self.languages if self.languages else '-'}\n'
-                    f'Оферы: {self.offers if self.offers else '-'}\n'
+                    f'Заголовок: {self.title if self.title else "-"}\n'
+                    f'Описание: {self.text if self.text else "-"}\n'
+                    f'Страны: {self.country_flags if self.country_flags else "-"}\n'
+                    f'Языки: {self.languages if self.languages else "-"}\n'
+                    f'Оферы: {self.offers if self.offers else "-"}\n'
                     f'Тип: {data[self.type]}\n'
                     f'Статус отправки: ')
 
