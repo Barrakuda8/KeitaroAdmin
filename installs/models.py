@@ -21,10 +21,14 @@ async def send_message(text, sent, error):
     bot = Bot(token=config.PUSHES_LOG_BOT_TOKEN,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     for user_id in config.PUSHES_LOG_BOT_USERS:
-        if len(sent) > 0:
+        if 5 >= len(sent) > 0:
             await bot.send_message(chat_id=user_id, text=text + f'🟢\nАудитория: {len(sent)}\n\n' + '\n\n'.join(sent))
+        elif len(sent) > 5:
+            await bot.send_message(chat_id=user_id, text=text + f'🟢\nАудитория: {len(sent)}')
         if len(error) > 0:
-            await bot.send_message(chat_id=user_id, text=text + f'🔴\nАудитория: {len(error)}\n' + '\n'.join(error))
+            await bot.send_message(chat_id=user_id, text=text + f'🔴\nАудитория: {len(error)}')
+            for e in error:
+                await bot.send_message(chat_id=user_id, text=e)
     await bot.session.close()
 
 
